@@ -7,144 +7,72 @@
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root {
-  color-scheme: dark;
-  --bg: #07070f;
-  --panel: #12122a;
-  --c1: #00e5ff;
-  --c2: #ff2d6f;
-  --ok: #2dff9a;
-  --tx: #e8eaff;
-  --mu: #8b8fb8;
-  box-sizing: border-box;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-* { margin: 0; padding: 0; box-sizing: inherit; }
-html, body { height: 100%; }
-body {
-  background: radial-gradient(circle at 50% 30%, #1a1040, var(--bg) 70%);
-  color: var(--tx);
-  font-family: "Segoe UI", Arial, sans-serif;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-#wrap {
-  position: relative;
-  width: min(100vw, calc(100vh * 1.5));
-  height: min(100vh, calc(100vw / 1.5));
-  max-width: 900px;
-  max-height: 600px;
-  box-shadow: 0 0 40px #00e5ff33;
-  border-radius: 10px;
-  overflow: hidden;
-}
-#wrap canvas {
-  position: absolute;
-  inset: 0;
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
-  border-radius: 10px;
-}
-#game {
-  pointer-events: none;
-  z-index: 2;
-}
-.ov {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  background: #05050ccc;
-  border-radius: 10px;
-  padding: 16px;
-  z-index: 10;
-}
-.hide { display: none !important; }
-h1 {
-  font-size: clamp(28px, 6vw, 56px);
-  letter-spacing: 4px;
-  background: linear-gradient(90deg, var(--c1), var(--c2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-.sub {
-  color: var(--mu);
-  margin: 8px 0 18px;
-  font-size: clamp(12px, 1.8vw, 16px);
-}
-.row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin: 6px 0;
-}
-button {
-  padding: 10px 20px;
-  font-size: clamp(14px, 2vw, 18px);
-  font-weight: 700;
-  border: 2px solid var(--c1);
-  border-radius: 10px;
-  background: #0a0a1e;
-  color: var(--c1);
-  cursor: pointer;
-  transition: .15s;
-}
-button:hover {
-  background: var(--c1);
-  color: #000;
-  box-shadow: 0 0 20px var(--c1);
-}
-button.g { border-color: var(--ok); color: var(--ok); }
-button.g:hover { background: var(--ok); color: #000; box-shadow: 0 0 20px var(--ok); }
-button.r { border-color: var(--c2); color: var(--c2); }
-button.r:hover { background: var(--c2); color: #000; box-shadow: 0 0 20px var(--c2); }
-input {
-  padding: 10px 14px;
-  font-size: 18px;
-  width: 170px;
-  text-align: center;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  border-radius: 10px;
-  border: 2px solid #2a2a5a;
-  background: var(--panel);
-  color: var(--tx);
-}
-#status {
-  min-height: 26px;
-  margin-top: 12px;
-  color: var(--ok);
-  font-size: clamp(13px, 2vw, 17px);
-}
-.keys {
-  color: var(--mu);
-  font-size: clamp(11px, 1.6vw, 14px);
-  margin-top: 14px;
-  line-height: 1.7;
-}
-.keys b { color: var(--c1); }
-#endT {
-  font-size: clamp(28px, 6vw, 52px);
-  font-weight: 900;
-  margin-bottom: 14px;
-}
+:root{color-scheme:dark;--bg:#07070f;--panel:#12122a;--c1:#00e5ff;--c2:#ff2d6f;--ok:#2dff9a;--tx:#e8eaff;--mu:#8b8fb8;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:inherit}
+html,body{height:100%}
+body{background:radial-gradient(circle at 50% 30%,#1a1040,var(--bg) 70%);color:var(--tx);font-family:"Segoe UI",Arial,sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#wrap{position:relative;width:min(100vw,calc(100vh*1.5));height:min(100vh,calc(100vw/1.5));max-width:900px;max-height:600px;box-shadow:0 0 40px #00e5ff33;border-radius:10px;overflow:hidden}
+#wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;border-radius:10px}
+#game{pointer-events:none;z-index:2}
+.ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#05050cee;border-radius:10px;padding:16px;z-index:10;overflow-y:auto}
+.hide{display:none!important}
+h1{font-size:clamp(26px,5.5vw,52px);letter-spacing:3px;background:linear-gradient(90deg,var(--c1),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:6px}
+.sub{color:var(--mu);margin:4px 0 14px;font-size:clamp(12px,1.7vw,15px)}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:5px 0}
+button{padding:9px 16px;font-size:clamp(13px,1.9vw,16px);font-weight:700;border:2px solid var(--c1);border-radius:10px;background:#0a0a1e;color:var(--c1);cursor:pointer;transition:.15s}
+button:hover{background:var(--c1);color:#000;box-shadow:0 0 18px var(--c1)}
+button.g{border-color:var(--ok);color:var(--ok)}button.g:hover{background:var(--ok);color:#000;box-shadow:0 0 18px var(--ok)}
+button.r{border-color:var(--c2);color:var(--c2)}button.r:hover{background:var(--c2);color:#000;box-shadow:0 0 18px var(--c2)}
+button.gray{border-color:#555;color:#aaa}button.gray:hover{background:#333;color:#fff}
+input{padding:9px 12px;font-size:15px;width:150px;text-align:center;border-radius:10px;border:2px solid #2a2a5a;background:var(--panel);color:var(--tx)}
+#status{min-height:22px;margin-top:8px;color:var(--ok);font-size:clamp(12px,1.8vw,15px)}
+.keys{color:var(--mu);font-size:clamp(11px,1.5vw,13px);margin-top:10px;line-height:1.6}
+.keys b{color:var(--c1)}
+#endT{font-size:clamp(26px,5.5vw,48px);font-weight:900;margin-bottom:12px}
+.user-bar{position:absolute;top:8px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:20;font-size:13px;color:var(--mu)}
+.user-bar b{color:var(--c1)}
+.auth-box{background:var(--panel);padding:18px 20px;border-radius:12px;border:1px solid #2a2a5a;margin:8px 0;width:min(300px,90%)}
+.auth-box input{width:100%;margin:6px 0;box-sizing:border-box}
+.auth-box button{width:100%;margin-top:8px}
+.lb-list{width:min(320px,92%);max-height:280px;overflow-y:auto;text-align:left;margin:10px 0}
+.lb-item{display:flex;justify-content:space-between;padding:8px 12px;background:#0e0e22;border-radius:8px;margin:4px 0;font-size:14px}
+.lb-item .rank{color:var(--c1);font-weight:700;width:28px}
+.lb-item .name{flex:1;color:var(--tx)}
+.lb-item .wins{color:var(--ok);font-weight:700}
+.msg{color:var(--c2);font-size:13px;margin-top:6px;min-height:18px}
 </style>
 </head>
 <body>
 <div id="wrap">
   <canvas id="game" width="900" height="600"></canvas>
-  <div id="lobby" class="ov">
+
+  <!-- 상단 유저 표시 -->
+  <div class="user-bar" id="userBar">
+    <span id="userLabel">게스트</span>
+    <span>
+      <button class="gray" style="padding:4px 10px;font-size:12px" onclick="showLeaderboard()">리더보드</button>
+      <button class="gray" style="padding:4px 10px;font-size:12px;margin-left:4px" id="logoutBtn" onclick="logout()">로그아웃</button>
+    </span>
+  </div>
+
+  <!-- 로그인 / 회원가입 -->
+  <div id="auth" class="ov">
     <h1>현욱이게임</h1>
-    <div class="sub">1인칭 3D 슈팅 · AI와 연습하거나, 방 코드로 최대 4명이 대결 · 마지막 생존자 3승</div>
+    <div class="sub">계정은 이 기기에만 저장됩니다</div>
+    <div class="auth-box">
+      <input id="authNick" maxlength="12" placeholder="닉네임 (2~12자)">
+      <input id="authPw" type="password" maxlength="20" placeholder="비밀번호">
+      <div class="msg" id="authMsg"></div>
+      <button class="g" onclick="doLogin()">로그인</button>
+      <button onclick="doSignup()">회원가입</button>
+      <button class="gray" onclick="playAsGuest()">게스트로 플레이</button>
+    </div>
+  </div>
+
+  <!-- 로비 -->
+  <div id="lobby" class="ov hide">
+    <h1>현욱이게임</h1>
+    <div class="sub">1인칭 3D 슈팅 · AI 연습 또는 최대 4인 대결 · 3승 먼저</div>
     <div class="row">
       <button class="g" onclick="startAI('easy')">AI 쉬움</button>
       <button class="g" onclick="startAI('normal')">AI 보통</button>
@@ -157,11 +85,18 @@ input {
     </div>
     <div class="row"><button id="startBtn" class="g hide" onclick="hostStart()">게임 시작</button></div>
     <div id="status"></div>
-    <div class="keys">
-      <b>WASD</b> 이동 · <b>← →</b> 시점 회전 · <b>Space / J</b> 발사 · <b>Shift / L</b> 대시<br>
-      하트 = 회복 · ⭐ = 트리플샷 · 총알은 벽에 한 번 튕겨요
-    </div>
+    <div class="keys"><b>WASD</b> 이동 · <b>← →</b> 시점 · <b>Space/J</b> 발사 · <b>Shift/L</b> 대시<br>💖 회복 · ⭐ 트리플샷 · 총알은 벽에 한 번 튕김</div>
   </div>
+
+  <!-- 리더보드 -->
+  <div id="leaderboard" class="ov hide">
+    <h1>리더보드</h1>
+    <div class="sub">이 기기에 저장된 승리 기록</div>
+    <div class="lb-list" id="lbList"></div>
+    <div class="row"><button onclick="hideLeaderboard()">닫기</button></div>
+  </div>
+
+  <!-- 결과 -->
   <div id="end" class="ov hide">
     <div id="endT"></div>
     <div class="row">
@@ -172,13 +107,146 @@ input {
 </div>
 
 <script>
+/* ========== 계정 / 리더보드 (localStorage) ========== */
+const LS_USERS = "hyeonuk_users";
+const LS_CURRENT = "hyeonuk_current";
+const LS_SCORES = "hyeonuk_scores";
+
+function loadUsers(){ try{ return JSON.parse(localStorage.getItem(LS_USERS)||"{}"); }catch(e){ return {}; } }
+function saveUsers(u){ localStorage.setItem(LS_USERS, JSON.stringify(u)); }
+function loadScores(){ try{ return JSON.parse(localStorage.getItem(LS_SCORES)||"{}"); }catch(e){ return {}; } }
+function saveScores(s){ localStorage.setItem(LS_SCORES, JSON.stringify(s)); }
+
+function simpleHash(str){
+  let h=0; for(let i=0;i<str.length;i++){ h=((h<<5)-h)+str.charCodeAt(i); h|=0; }
+  return "h"+Math.abs(h).toString(16);
+}
+
+let currentUser = null; // {nick, isGuest}
+
+function updateUserBar(){
+  const label = $("userLabel");
+  const logoutBtn = $("logoutBtn");
+  if(currentUser){
+    label.innerHTML = currentUser.isGuest ? "게스트" : "<b>"+currentUser.nick+"</b> 님";
+    logoutBtn.style.display = currentUser.isGuest ? "none" : "inline-block";
+  } else {
+    label.textContent = "게스트";
+    logoutBtn.style.display = "none";
+  }
+}
+
+function doSignup(){
+  const nick = $("authNick").value.trim();
+  const pw = $("authPw").value;
+  const msg = $("authMsg");
+  if(nick.length<2||nick.length>12){ msg.textContent="닉네임은 2~12자로 해주세요"; return; }
+  if(pw.length<2){ msg.textContent="비밀번호는 2자 이상"; return; }
+  const users = loadUsers();
+  if(users[nick]){ msg.textContent="이미 존재하는 닉네임입니다"; return; }
+  users[nick] = simpleHash(pw);
+  saveUsers(users);
+  // 점수 초기화
+  const scores = loadScores();
+  if(!scores[nick]) scores[nick]=0;
+  saveScores(scores);
+  currentUser = {nick, isGuest:false};
+  localStorage.setItem(LS_CURRENT, JSON.stringify(currentUser));
+  msg.textContent="";
+  enterLobby();
+}
+
+function doLogin(){
+  const nick = $("authNick").value.trim();
+  const pw = $("authPw").value;
+  const msg = $("authMsg");
+  const users = loadUsers();
+  if(!users[nick] || users[nick] !== simpleHash(pw)){
+    msg.textContent="닉네임 또는 비밀번호가 틀렸습니다";
+    return;
+  }
+  currentUser = {nick, isGuest:false};
+  localStorage.setItem(LS_CURRENT, JSON.stringify(currentUser));
+  msg.textContent="";
+  enterLobby();
+}
+
+function playAsGuest(){
+  currentUser = {nick:"게스트", isGuest:true};
+  localStorage.removeItem(LS_CURRENT);
+  enterLobby();
+}
+
+function logout(){
+  currentUser = null;
+  localStorage.removeItem(LS_CURRENT);
+  $("auth").classList.remove("hide");
+  $("lobby").classList.add("hide");
+  $("leaderboard").classList.add("hide");
+  $("end").classList.add("hide");
+  updateUserBar();
+  $("authNick").value=""; $("authPw").value=""; $("authMsg").textContent="";
+}
+
+function enterLobby(){
+  $("auth").classList.add("hide");
+  $("lobby").classList.remove("hide");
+  $("leaderboard").classList.add("hide");
+  updateUserBar();
+}
+
+function addWin(){
+  if(!currentUser || currentUser.isGuest) return;
+  const scores = loadScores();
+  scores[currentUser.nick] = (scores[currentUser.nick]||0) + 1;
+  saveScores(scores);
+}
+
+function showLeaderboard(){
+  const scores = loadScores();
+  const list = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const box = $("lbList");
+  if(list.length===0){
+    box.innerHTML = "<div style='text-align:center;color:#888;padding:20px'>아직 기록이 없습니다</div>";
+  } else {
+    box.innerHTML = list.map(([name,wins],i)=>`
+      <div class="lb-item">
+        <span class="rank">${i+1}</span>
+        <span class="name">${name}</span>
+        <span class="wins">${wins}승</span>
+      </div>`).join("");
+  }
+  $("lobby").classList.add("hide");
+  $("auth").classList.add("hide");
+  $("leaderboard").classList.remove("hide");
+}
+
+function hideLeaderboard(){
+  $("leaderboard").classList.add("hide");
+  if(currentUser) $("lobby").classList.remove("hide");
+  else $("auth").classList.remove("hide");
+}
+
+// 페이지 로드 시 자동 로그인
+(function(){
+  try{
+    const saved = localStorage.getItem(LS_CURRENT);
+    if(saved){
+      currentUser = JSON.parse(saved);
+      enterLobby();
+    }
+  }catch(e){}
+  updateUserBar();
+})();
+
+/* ========== 게임 본체 ========== */
 const $=id=>document.getElementById(id);
 const cv=$("game"),ctx=cv.getContext("2d");
 const W=900,H=600,R=16,DMG=12,WIN=3,MAXP=4;
 const COL=["#0a7cff","#ff2d6f","#16b85a","#ff9d00"];
 const OBS=[[400,230,100,140],[180,100,40,120],[180,380,40,120],[680,100,40,120],[680,380,40,120]];
 const DIFF={easy:{spd:130,cd:.75,err:.38,lead:0,dash:0},normal:{spd:180,cd:.42,err:.16,lead:.6,dash:.35},hard:{spd:235,cd:.22,err:.04,lead:1,dash:1}};
-const FACE=new Image();FACE.src="data:image/jpeg;base64,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";
+const FACE=new Image();FACE.src="data:image/jpeg;base64,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";
 
 let peer=null,conn=null,conns=[],isHost=false,isAI=false,D=DIFF.normal,myId=0,nextId=1,roomCode="";
 let state="lobby",timer=0,banner="",shake=0,t=0,sendT=0;
@@ -203,7 +271,7 @@ function createRoom(){
   if(typeof Peer==="undefined"){say("PeerJS 로드 실패");return}
   roomCode=Math.random().toString(36).slice(2,7).toUpperCase();
   peer=new Peer("hyeonuk-"+roomCode);isHost=true;isAI=false;myId=0;conns=[];nextId=1;say("방 생성 중...");
-  const tm=setTimeout(()=>{if(!peer||!peer.open)say("방 서버에 연결하지 못했어요. 다른 브라우저를 써 보세요.")},8000);
+  const tm=setTimeout(()=>{if(!peer||!peer.open)say("방 서버 연결 실패. 다른 브라우저를 시도해보세요.")},8000);
   peer.on("open",()=>{clearTimeout(tm);lobbyMsg()});
   peer.on("connection",c=>{
     if(conns.length>=MAXP-1||state!=="lobby"){c.on("open",()=>c.close());return}
@@ -277,7 +345,13 @@ function checkEnd(){
   if(al.length>1)return;
   const w=al[0];if(w)wins[w.id]++;
   const top=P.find(p=>wins[p.id]>=WIN);
-  if(top){state="over";setTimeout(()=>showEnd(top===me?"VICTORY":"DEFEAT",top===me),900);return}
+  if(top){
+    state="over";
+    const isMeWin = top===me;
+    if(isMeWin) addWin();          // 리더보드에 승리 기록
+    setTimeout(()=>showEnd(isMeWin?"VICTORY":"DEFEAT",isMeWin),900);
+    return;
+  }
   state="roundEnd";timer=2;banner=!w?"무승부":w===me?"승리!":isAI?"패배...":"P"+(P.indexOf(w)+1)+" 승리";
 }
 function showEnd(txt,win){
