@@ -2,75 +2,1422 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>현욱이게임</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>현욱이게임 - 3D 멸망의 운석 대전</title>
+<!-- Tailwind CSS for UI -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- PeerJS for P2P Multiplayer -->
 <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<!-- Three.js 3D Engine -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-:root{color-scheme:dark;--bg:#07070f;--panel:#12122a;--c1:#00e5ff;--c2:#ff2d6f;--ok:#2dff9a;--tx:#e8eaff;--mu:#8b8fb8;box-sizing:border-box}
-*{margin:0;padding:0;box-sizing:inherit;-webkit-tap-highlight-color:transparent}
-html,body{height:100%;height:100dvh;overflow:hidden;background:#07070f}
-body{color:var(--tx);font-family:"Segoe UI",Arial,sans-serif}
-#app{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#1a1040,#07070f 70%);padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
-#wrap{position:relative;width:min(100vw,calc(100dvh*1.5));height:min(100dvh,calc(100vw/1.5));max-width:900px;max-height:600px;box-shadow:0 0 40px #ff9d0044;border-radius:10px;overflow:hidden}
-#wrap.playing{touch-action:none}
-@media (max-width:700px),(max-height:500px){#wrap{width:100%;height:100%;max-width:none;max-height:none;border-radius:0;box-shadow:none}}
-#wrap canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;pointer-events:none!important}
-.menu{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:linear-gradient(#07071acc,#07071aee),url(data:image/jpeg;base64,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");
-const photoM=new THREE.MeshLambertMaterial({map:photoTex});
-box(500,H-25,180,12,65,photoM);box(W-20,380,20,120,110,wallM);
-const sign=new THREE.Mesh(new THREE.PlaneGeometry(60,35),signTex);sign.position.set(240,65,-10);scene.add(sign);
+  @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;700;900&display=swap');
 
-function resetVis(){for(const k in vis)scene.remove(vis[k].m);vis={};bm.forEach(m=>scene.remove(m));bm=[];pks.forEach(m=>scene.remove(m));pks=[]}
-function updateScene(){
-  const live=state==="play";
-  if(!me)return;
-  const targetX=me.x,targetY=me.y,targetA=me.a;
-  cam.position.set(targetX,28,targetY+20);
-  cam.rotation.set(0,0,0);
-  cam.rotation.y=(Math.PI/2)-targetA;
-  cam.rotation.x=-0.22;
-  const activeIds=new Set(P.map(p=>p.id));
-  for(const id in vis){if(!activeIds.has(Number(id))){scene.remove(vis[id].m);delete vis[id]}}
-  P.forEach(p=>{
-    let v=vis[p.id];
-    if(!v){
-      const g=new THREE.Group();
-      const body=new THREE.Mesh(new THREE.BoxGeometry(16,28,12),new THREE.MeshLambertMaterial({color:p.col}));body.position.y=14;g.add(body);
-      const head=new THREE.Mesh(new THREE.BoxGeometry(12,12,12),new THREE.MeshLambertMaterial({color:0xffd29d}));head.position.y=32;g.add(head);
-      scene.add(g);v={m:g};vis[p.id]=v
-    }
-    v.m.position.set(p.x,0,p.y);
-    v.m.rotation.y=-p.a+Math.PI/2;
-    v.m.visible=p.alive
-  });
-  while(bm.length<bullets.length){const m=new THREE.Mesh(new THREE.SphereGeometry(3.5,8,8),new THREE.MeshBasicMaterial({color:0xffaa00}));scene.add(m);bm.push(m)}
-  while(bm.length>bullets.length){scene.remove(bm.pop())}
-  bullets.forEach((b,i)=>{bm[i].position.set(b.x,18,b.y)});
-  while(pks.length<pickups.length){
-    const g=new THREE.Group();
-    const c=new THREE.Mesh(new THREE.CylinderGeometry(8,8,16,12),new THREE.MeshLambertMaterial({color:0x2dff9a}));c.position.y=8;g.add(c);
-    scene.add(g);pks.push(g)
+  :root {
+    --bg-dark: #090a10;
+    --neon-cyan: #00f0ff;
+    --neon-orange: #ff5500;
+    --neon-yellow: #ffcc00;
   }
-  pickups.forEach((pk,i)=>{pks[i].position.set(pk.x,0,pk.y);pks[i].visible=pk.cd<=0});
-  ren.render(scene,cam)
+  
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-select: none;
+    margin: 0;
+    padding: 0;
+    touch-action: manipulation;
+  }
+  
+  body, html {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: var(--bg-dark);
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+
+  .font-title {
+    font-family: 'Black Han Sans', sans-serif;
+  }
+
+  /* Canvas Container */
+  #game-container {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+  }
+
+  /* HUD Overlay */
+  #hud {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .interactive {
+    pointer-events: auto;
+  }
+
+  /* Glassmorphism Panel */
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Touch Joystick Elements */
+  .joystick-base {
+    width: 120px;
+    height: 120px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    display: none;
+    touch-action: none;
+  }
+
+  .joystick-stick {
+    width: 50px;
+    height: 50px;
+    background: radial-gradient(circle, var(--neon-cyan) 0%, rgba(0,240,255,0.4) 100%);
+    border-radius: 50%;
+    position: absolute;
+    top: 35px;
+    left: 35px;
+    box-shadow: 0 0 15px var(--neon-cyan);
+  }
+
+  /* Hitmarker */
+  #hitmarker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    width: 32px;
+    height: 32px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.05s ease-out, transform 0.05s ease-out;
+  }
+  #hitmarker.active {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  #hitmarker::before, #hitmarker::after {
+    content: '';
+    position: absolute;
+    background: #ff0055;
+    box-shadow: 0 0 8px #ff0055;
+  }
+  #hitmarker::before { left: 14px; top: 0; width: 4px; height: 32px; }
+  #hitmarker::after { top: 14px; left: 0; width: 32px; height: 4px; }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container"></div>
+
+<!-- HUD OVERLAY -->
+<div id="hud" class="hidden flex flex-col justify-between p-4 md:p-6 text-white select-none">
+  <!-- Top Bar -->
+  <div class="flex justify-between items-start w-full max-w-7xl mx-auto">
+    <!-- Player Stats Card -->
+    <div class="glass-panel p-3 md:p-4 rounded-2xl flex items-center space-x-4 min-w-[220px]">
+      <div class="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-cyan-400 bg-slate-800 flex items-center justify-center">
+        <i class="fa-solid fa-graduation-cap text-2xl text-cyan-300"></i>
+      </div>
+      <div class="flex-1">
+        <div class="flex justify-between items-center mb-1">
+          <span id="hud-player-name" class="font-bold text-sm md:text-base text-cyan-200 truncate max-w-[110px]">현욱이</span>
+          <span id="hud-hp-text" class="text-xs font-bold text-emerald-400">100 HP</span>
+        </div>
+        <!-- Health Bar -->
+        <div class="w-full bg-gray-950 h-3 rounded-full overflow-hidden p-0.5 border border-white/10">
+          <div id="hud-hp-bar" class="bg-gradient-to-r from-emerald-500 to-teal-400 h-full rounded-full transition-all duration-200" style="width: 100%;"></div>
+        </div>
+        <!-- Shield / Ammo Indicator -->
+        <div class="flex items-center justify-between text-[10px] text-gray-400 mt-1">
+          <span id="hud-shield-status"><i class="fa-solid fa-shield-halved text-cyan-400"></i> 노말 버프</span>
+          <span id="hud-weapon-status" class="text-amber-400 font-bold"><i class="fa-solid fa-meteor"></i> 멸망의 운석</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Match Info & Timer -->
+    <div class="glass-panel px-6 py-2 md:py-3 rounded-2xl text-center shadow-lg border-amber-500/30 border">
+      <div class="text-xs text-amber-400 font-bold tracking-widest uppercase">학교 복도 대전</div>
+      <div id="hud-timer" class="font-title text-2xl md:text-3xl text-white tracking-wider">02:00</div>
+      <div id="hud-room-code" class="text-[10px] text-gray-400">ROOM: SOLOMODE</div>
+    </div>
+
+    <!-- Kill Log & Mini Leaderboard -->
+    <div class="glass-panel p-3 rounded-2xl min-w-[160px] md:min-w-[200px] text-right">
+      <div class="text-xs font-bold text-gray-400 mb-1 border-b border-white/10 pb-1">KILLS SCOREBOARD</div>
+      <div id="hud-leaderboard" class="space-y-1 text-xs font-medium">
+        <!-- Leaderboard items inserted dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Crosshair & Hitmarker -->
+  <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+    <div class="relative w-8 h-8 flex items-center justify-center">
+      <div class="w-1.5 h-1.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#00f0ff]"></div>
+      <div class="absolute w-4 h-0.5 bg-cyan-400/60 -left-3"></div>
+      <div class="absolute w-4 h-0.5 bg-cyan-400/60 -right-3"></div>
+      <div class="absolute h-4 w-0.5 bg-cyan-400/60 -top-3"></div>
+      <div class="absolute h-4 w-0.5 bg-cyan-400/60 -bottom-3"></div>
+    </div>
+    <div id="hitmarker"></div>
+  </div>
+
+  <!-- Bottom Mobile Controls / Action Info -->
+  <div class="flex justify-between items-end w-full max-w-7xl mx-auto">
+    <!-- Touch Joystick Zone -->
+    <div id="joystick-zone" class="w-36 h-36 relative interactive md:hidden">
+      <div id="joystick-base" class="joystick-base">
+        <div id="joystick-stick" class="joystick-stick"></div>
+      </div>
+    </div>
+
+    <!-- Controls Hints (Desktop) -->
+    <div class="hidden md:flex glass-panel px-4 py-2 rounded-xl space-x-4 text-xs text-gray-300">
+      <span><kbd class="px-1.5 py-0.5 bg-white/10 rounded border border-white/20">W A S D</kbd> 이동</span>
+      <span><kbd class="px-1.5 py-0.5 bg-white/10 rounded border border-white/20">마우스</kbd> 조준</span>
+      <span><kbd class="px-1.5 py-0.5 bg-white/10 rounded border border-white/20">좌클릭</kbd> 멸망 운석 발사</span>
+      <span><kbd class="px-1.5 py-0.5 bg-white/10 rounded border border-white/20">SHIFT</kbd> 대시</span>
+    </div>
+
+    <!-- Mobile Fire Button -->
+    <div class="md:hidden interactive flex flex-col space-y-3">
+      <button id="btn-mobile-dash" class="w-14 h-14 bg-slate-800/80 active:bg-cyan-600 border border-cyan-500/50 rounded-full flex items-center justify-center text-cyan-400 text-xl shadow-lg">
+        <i class="fa-solid fa-bolt"></i>
+      </button>
+      <button id="btn-mobile-fire" class="w-20 h-20 bg-gradient-to-tr from-orange-600 to-amber-500 active:scale-95 border-2 border-yellow-300 rounded-full flex items-center justify-center text-white text-3xl shadow-[0_0_20px_rgba(255,100,0,0.6)]">
+        <i class="fa-solid fa-meteor"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- LOBBY & MENU OVERLAY -->
+<div id="lobby-screen" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-zinc-950 to-black">
+  <div class="glass-panel w-full max-w-lg p-6 md:p-8 rounded-3xl shadow-2xl border border-white/15 relative overflow-hidden">
+    <!-- Ambient glowing light accents -->
+    <div class="absolute -top-24 -left-24 w-48 h-48 bg-orange-500/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+    <!-- Title & Hero Banner -->
+    <div class="text-center mb-6">
+      <div class="inline-block px-3 py-1 bg-amber-500/10 border border-amber-500/30 rounded-full text-amber-400 text-xs font-bold tracking-wider mb-2">
+        🔥 3D MULTIPLAYER SCHOOL ARENA 🔥
+      </div>
+      <h1 class="font-title text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 drop-shadow-sm">
+        현욱이게임
+      </h1>
+      <p class="text-xs md:text-sm text-gray-400 mt-1">학교 복도에서 펼쳐지는 멸망의 얼굴 운석 탄막 대격돌!</p>
+    </div>
+
+    <!-- Custom Player Setup -->
+    <div class="space-y-4 mb-6">
+      <div>
+        <label class="block text-xs font-bold text-gray-300 mb-1 uppercase">학생 닉네임 설정</label>
+        <div class="relative">
+          <input type="text" id="input-nickname" value="현욱이" maxlength="10" 
+            class="w-full bg-slate-900/80 border border-slate-700 focus:border-amber-500 rounded-xl px-4 py-3 text-white font-bold outline-none transition-all pl-10 text-sm">
+          <i class="fa-solid fa-user-graduate absolute left-3.5 top-3.5 text-gray-500"></i>
+        </div>
+      </div>
+
+      <!-- Mode Selector Tabs -->
+      <div class="grid grid-cols-2 gap-2 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        <button id="tab-solo" class="py-2.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow">
+          <i class="fa-solid fa-robot mr-1"></i> 싱글 / AI 방과후 대전
+        </button>
+        <button id="tab-multi" class="py-2.5 rounded-lg text-xs font-bold text-gray-400 transition-all hover:text-white">
+          <i class="fa-solid fa-network-wired mr-1"></i> 멀티플레이 (PeerJS)
+        </button>
+      </div>
+
+      <!-- Multi-Player Options Panel (Hidden by default) -->
+      <div id="multi-options" class="hidden space-y-3 pt-2">
+        <div class="flex space-x-2">
+          <input type="text" id="input-room-code" placeholder="방 코드 입력 (예: HW123)" uppercase 
+            class="flex-1 bg-slate-900/80 border border-slate-700 focus:border-cyan-500 rounded-xl px-3 py-2 text-white text-xs font-mono outline-none">
+          <button id="btn-join-room" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center">
+            <i class="fa-solid fa-right-to-bracket mr-1"></i> 참가
+          </button>
+        </div>
+        <div class="text-center text-[10px] text-gray-500">- 또는 -</div>
+        <button id="btn-create-room" class="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-cyan-300 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center">
+          <i class="fa-solid fa-plus-circle mr-1.5"></i> 새로운 학교 복도 방 개설하기
+        </button>
+      </div>
+    </div>
+
+    <!-- Start Button -->
+    <button id="btn-start-game" class="w-full py-4 bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:brightness-110 active:scale-[0.99] text-slate-950 font-title text-xl tracking-wider rounded-2xl shadow-[0_0_25px_rgba(245,158,11,0.4)] transition-all flex items-center justify-center space-x-2">
+      <i class="fa-solid fa-play text-lg"></i>
+      <span>학교 복도 전장으로 입장</span>
+    </button>
+
+    <!-- Footer Controls & Sound Toggle -->
+    <div class="flex justify-between items-center mt-6 pt-4 border-t border-white/10 text-xs text-gray-400">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-school text-amber-400"></i>
+        <span>학교 화장실 앞 복도 맵</span>
+      </div>
+      <button id="btn-toggle-sound" class="hover:text-white transition-colors flex items-center space-x-1">
+        <i id="icon-sound" class="fa-solid fa-volume-high text-emerald-400"></i>
+        <span id="text-sound">사운드 ON</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MATCH END OVERLAY -->
+<div id="gameover-screen" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+  <div class="glass-panel w-full max-w-md p-8 rounded-3xl text-center space-y-6 border border-amber-500/30">
+    <div class="inline-block p-4 bg-amber-500/10 rounded-full border border-amber-500/30 mb-2">
+      <i id="gameover-icon" class="fa-solid fa-trophy text-5xl text-amber-400"></i>
+    </div>
+    <h2 id="gameover-title" class="font-title text-3xl md:text-4xl text-white">최종 승리!</h2>
+    <p id="gameover-desc" class="text-gray-300 text-sm">복도의 지배자 현욱이가 전장을 휩쓸었습니다.</p>
+    
+    <div id="final-stats" class="bg-slate-900/80 p-4 rounded-xl border border-white/10 text-left space-y-2 text-xs">
+      <!-- Dynamic Stats -->
+    </div>
+
+    <button id="btn-restart" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:brightness-110 text-white font-title text-lg rounded-xl shadow-lg transition-all">
+      대기실로 돌아가기
+    </button>
+  </div>
+</div>
+
+<!-- MAIN GAME LOGIC SCRIPT -->
+<script>
+/**
+ * 현욱이게임 3D ENGINE & MULTIPLAYER SYSTEM
+ */
+
+// ==========================================
+// 1. SOUND SYNTHESIZER (Web Audio API)
+// ==========================================
+class SoundFX {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      this.ctx = new AudioCtx();
+    }
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  playMeteorShoot() {
+    if (!this.enabled || !this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.25);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.25);
+  }
+
+  playExplosion() {
+    if (!this.enabled || !this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 0.4;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = Math.random() * 2 - 1;
+    }
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+    filter.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.4);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start();
+  }
+
+  playHit() {
+    if (!this.enabled || !this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.1);
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.1);
+  }
+
+  playPickup() {
+    if (!this.enabled || !this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); // E5
+    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16); // G5
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.3);
+  }
 }
 
-function render2D(){
-  ctx.clearRect(0,0,W,H);ctx.save();
-  if(shake>0){ctx.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake)}
-  ctx.fillStyle="#07070f";ctx.fillRect(0,0,W,H);
-  if(!state.startsWith("lobby")){ctx.restore();return}
-  ctx.restore()
+const sfx = new SoundFX();
+
+// ==========================================
+// 2. CANVAS TEXTURE GENERATOR (Procedural Textures)
+// ==========================================
+// A. Face Meteor Texture (User Image 1 representation: Meteor + Glowing face with glasses)
+function generateMeteorFaceTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  // Outer Meteor Flame Glow
+  const grad = ctx.createRadialGradient(256, 256, 50, 256, 256, 250);
+  grad.addColorStop(0, '#ffe600');
+  grad.addColorStop(0.3, '#ff5500');
+  grad.addColorStop(0.7, '#880000');
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Meteor Rock Base
+  ctx.beginPath();
+  ctx.arc(256, 256, 170, 0, Math.PI * 2);
+  ctx.fillStyle = '#2d1810';
+  ctx.fill();
+
+  // Face Skin Glow
+  ctx.beginPath();
+  ctx.arc(256, 250, 120, 0, Math.PI * 2);
+  ctx.fillStyle = '#ffcca6';
+  ctx.fill();
+
+  // Hair
+  ctx.beginPath();
+  ctx.ellipse(256, 160, 110, 60, 0, Math.PI, 0);
+  ctx.fillStyle = '#1a1829';
+  ctx.fill();
+
+  // Glasses Frame
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 10;
+  // Left Lens
+  ctx.strokeRect(180, 220, 65, 45);
+  // Right Lens
+  ctx.strokeRect(267, 220, 65, 45);
+  // Bridge
+  ctx.beginPath();
+  ctx.moveTo(245, 238);
+  ctx.lineTo(267, 238);
+  ctx.stroke();
+
+  // Eyes
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.arc(212, 242, 10, 0, Math.PI * 2);
+  ctx.arc(300, 242, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cool Smirk Mouth
+  ctx.beginPath();
+  ctx.arc(256, 290, 30, 0.1, Math.PI - 0.1);
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Flame Accents over Face
+  ctx.fillStyle = 'rgba(255, 100, 0, 0.3)';
+  ctx.beginPath();
+  ctx.arc(256, 256, 170, 0, Math.PI * 2);
+  ctx.fill();
+
+  return new THREE.CanvasTexture(canvas);
 }
 
-function loop(ts){
-  const dt=Math.min(.05,(ts-(window._lt||ts))/1000);window._lt=ts;
-  if(state==="play"||state==="round"||state==="roundEnd"){update(dt);updateScene()}
-  render2D();
-  requestAnimationFrame(loop)
+// B. School Hallway Sign Texture (User Image 2 Toilet / 화장실 Sign)
+function generateToiletSignTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 256, 128);
+  ctx.strokeStyle = '#0284c7';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(6, 6, 244, 116);
+
+  // Top Accent Bar
+  ctx.fillStyle = '#0284c7';
+  ctx.fillRect(10, 10, 236, 28);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Toilet', 128, 30);
+
+  // Korean Text
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 42px "Noto Sans KR", sans-serif';
+  ctx.fillText('화장실', 128, 88);
+
+  return new THREE.CanvasTexture(canvas);
 }
-requestAnimationFrame(ts=>{window._lt=ts;requestAnimationFrame(loop)});
+
+// C. School Floor Tile Texture
+function generateFloorTileTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#cfd8dc';
+  ctx.fillRect(0, 0, 512, 512);
+
+  // Grid Grout Lines
+  ctx.strokeStyle = '#90a4ae';
+  ctx.lineWidth = 4;
+  const size = 64;
+  for (let x = 0; x <= 512; x += size) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, x); ctx.lineTo(512, x); ctx.stroke();
+  }
+
+  // Polished Marble Specks
+  ctx.fillStyle = 'rgba(0,0,0,0.04)';
+  for (let i = 0; i < 500; i++) {
+    ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(12, 12);
+  return texture;
+}
+
+// D. Wall Panel Texture
+function generateWallTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(0, 0, 256, 256);
+  // Bottom Wainscoting (Marble Trim matching image 2)
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillRect(0, 180, 256, 76);
+  ctx.strokeStyle = '#94a3b8';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(0, 180, 256, 76);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(8, 1);
+  return texture;
+}
+
+// ==========================================
+// 3. GAME STATE & VARIABLES
+// ==========================================
+let scene, camera, renderer;
+let me = null;
+let players = [];
+let bullets = [];
+let particles = [];
+let pickups = [];
+let visP = {}; // Mesh references by player ID
+let meteorTexture, floorTexture, wallTexture, signTexture;
+
+let isSolo = true;
+let state = "lobby"; // lobby, play, roundEnd
+let gameTime = 120; // 2 minutes
+let timerInterval = null;
+let shakeTime = 0;
+
+// Input State
+const keys = { w: false, a: false, s: false, d: false, shift: false };
+let mouseAngle = 0;
+let joystickVector = { x: 0, y: 0 };
+let isMobile = false;
+
+// PeerJS Networking
+let peer = null;
+let roomCode = "";
+let connections = [];
+let isHost = false;
+
+// ==========================================
+// 4. THREE.JS SCENE SETUP & MAP CREATION
+// ==========================================
+function init3D() {
+  const container = document.getElementById('game-container');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0c14);
+  scene.fog = new THREE.FogExp2(0x0a0c14, 0.015);
+
+  camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.appendChild(renderer.domElement);
+
+  // Generate Procedural Textures
+  meteorTexture = generateMeteorFaceTexture();
+  floorTexture = generateFloorTileTexture();
+  wallTexture = generateWallTexture();
+  signTexture = generateToiletSignTexture();
+
+  // Lights
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  scene.add(ambientLight);
+
+  const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+  dirLight.position.set(50, 100, 50);
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = 1024;
+  dirLight.shadow.mapSize.height = 1024;
+  dirLight.shadow.camera.near = 0.5;
+  dirLight.shadow.camera.far = 250;
+  dirLight.shadow.camera.left = -150;
+  dirLight.shadow.camera.right = 150;
+  dirLight.shadow.camera.top = 150;
+  dirLight.shadow.camera.bottom = -150;
+  scene.add(dirLight);
+
+  // Create High School Corridor Arena Map
+  buildSchoolHallwayMap();
+
+  window.addEventListener('resize', onWindowResize);
+}
+
+// Build School Hallway Arena Map (Based on Image 2)
+function buildSchoolHallwayMap() {
+  const MAP_W = 240;
+  const MAP_H = 320;
+  const WALL_H = 50;
+
+  // Floor
+  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.3, metalness: 0.1 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W, MAP_H), floorMat);
+  floor.rotation.x = -Math.PI / 2;
+  floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Ceiling
+  const ceilMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8 });
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W, MAP_H), ceilMat);
+  ceiling.position.y = WALL_H;
+  ceiling.rotation.x = Math.PI / 2;
+  scene.add(ceiling);
+
+  // Hallway Fluorescent Ceiling Lights
+  for (let z = -MAP_H / 2 + 40; z < MAP_H / 2; z += 60) {
+    const lightBox = new THREE.Mesh(
+      new THREE.BoxGeometry(20, 1, 8),
+      new THREE.MeshBasicMaterial({ color: 0xffffff })
+    );
+    lightBox.position.set(0, WALL_H - 0.5, z);
+    scene.add(lightBox);
+
+    const pointLight = new THREE.PointLight(0xfff5ea, 0.6, 90);
+    pointLight.position.set(0, WALL_H - 5, z);
+    scene.add(pointLight);
+  }
+
+  // Outer Walls
+  const wallMat = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5 });
+
+  function addWall(w, h, d, x, y, z) {
+    const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
+    wall.position.set(x, y, z);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene.add(wall);
+  }
+
+  // Perimeter Walls
+  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, -MAP_H / 2); // North
+  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, MAP_H / 2);  // South
+  addWall(4, WALL_H, MAP_H, -MAP_W / 2, WALL_H / 2, 0); // West
+  addWall(4, WALL_H, MAP_H, MAP_W / 2, WALL_H / 2, 0);  // East
+
+  // Inner Classroom Obstacle Walls (Creating School Corridor Loops)
+  addWall(80, WALL_H, 10, -40, WALL_H / 2, -60);
+  addWall(80, WALL_H, 10, 40, WALL_H / 2, 60);
+  addWall(10, WALL_H, 90, 0, WALL_H / 2, 0);
+
+  // Classroom Doors
+  const doorMat = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.6 });
+  const door1 = new THREE.Mesh(new THREE.BoxGeometry(18, 32, 2), doorMat);
+  door1.position.set(-40, 16, -54);
+  scene.add(door1);
+
+  // Toilet Sign Hanging from Ceiling (Matching Image 2 Toilet Sign)
+  const signHolder = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 10),
+    new THREE.MeshBasicMaterial({ color: 0x333333 })
+  );
+  signHolder.position.set(0, WALL_H - 5, -50);
+  scene.add(signHolder);
+
+  const signMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(24, 12),
+    new THREE.MeshBasicMaterial({ map: signTexture, side: THREE.DoubleSide })
+  );
+  signMesh.position.set(0, WALL_H - 14, -50);
+  scene.add(signMesh);
+}
+
+// ==========================================
+// 5. CHARACTER MODEL CREATION (Student Uniform)
+// ==========================================
+function createStudentCharacterMesh(colorHex = 0x38bdf8) {
+  const group = new THREE.Group();
+
+  // Torso / Polo Shirt (Light Blue matching image 2)
+  const shirtMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.6 });
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(10, 16, 7), shirtMat);
+  torso.position.y = 15;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Pants (Dark Blue/Black matching image 2)
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
+  const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(4.2, 14, 6), pantsMat);
+  leftLeg.position.set(-2.4, 7, 0);
+  leftLeg.castShadow = true;
+  group.add(leftLeg);
+
+  const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(4.2, 14, 6), pantsMat);
+  rightLeg.position.set(2.4, 7, 0);
+  rightLeg.castShadow = true;
+  group.add(rightLeg);
+
+  // Head (Skin tone)
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffd29d, roughness: 0.5 });
+  const head = new THREE.Mesh(new THREE.BoxGeometry(8, 8, 8), skinMat);
+  head.position.y = 27;
+  head.castShadow = true;
+  group.add(head);
+
+  // Glasses Frame (Dark)
+  const glassMat = new THREE.MeshBasicMaterial({ color: 0x1e293b });
+  const glasses = new THREE.Mesh(new THREE.BoxGeometry(8.2, 2.5, 8.2), glassMat);
+  glasses.position.set(0, 27.5, 0.2);
+  group.add(glasses);
+
+  // Student Hair (Black)
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x1e1e1e, roughness: 0.9 });
+  const hair = new THREE.Mesh(new THREE.BoxGeometry(8.4, 4, 8.4), hairMat);
+  hair.position.y = 31;
+  group.add(hair);
+
+  // Weapon / Hand Holding Meteor Launcher
+  const launcherMat = new THREE.MeshStandardMaterial({ color: 0xff5500, roughness: 0.2, metalness: 0.5 });
+  const launcher = new THREE.Mesh(new THREE.SphereGeometry(3.5, 12, 12), launcherMat);
+  launcher.position.set(6, 17, 6);
+  group.add(launcher);
+
+  return group;
+}
+
+// ==========================================
+// 6. MULTIPLAYER & GAME ENGINE CLASS
+// ==========================================
+class Player {
+  constructor(id, name, isBot = false, col = 0x38bdf8) {
+    this.id = id;
+    this.name = name;
+    this.isBot = isBot;
+    this.color = col;
+    this.x = (Math.random() - 0.5) * 160;
+    this.z = (Math.random() - 0.5) * 200;
+    this.angle = 0;
+    this.hp = 100;
+    this.maxHp = 100;
+    this.kills = 0;
+    this.alive = true;
+    this.speed = 70;
+    this.dashTimer = 0;
+    this.fireCd = 0;
+    this.shieldTimer = 0;
+    this.rapidTimer = 0;
+  }
+}
+
+// Initialize Singleplayer or Local Player
+function setupLocalGame() {
+  const nick = document.getElementById('input-nickname').value || '현욱이';
+  me = new Player('p_local', nick, false, 0x00f0ff);
+  players = [me];
+
+  if (isSolo) {
+    // Add 3 AI Student Bots
+    const botNames = ['열공현욱', '복도짱현욱', '시험기간현욱'];
+    const colors = [0xff2d6f, 0xffb703, 0x10b981];
+    for (let i = 0; i < 3; i++) {
+      players.push(new Player('bot_' + i, botNames[i], true, colors[i]));
+    }
+  }
+
+  // Create Pickups in Hallway
+  spawnPickups();
+  startGameLoop();
+}
+
+function spawnPickups() {
+  pickups = [
+    { id: 'pk_hp', type: 'hp', x: -50, z: 0, mesh: null, cd: 0 },
+    { id: 'pk_rapid', type: 'rapid', x: 50, z: 0, mesh: null, cd: 0 },
+    { id: 'pk_shield', type: 'shield', x: 0, z: 80, mesh: null, cd: 0 }
+  ];
+
+  pickups.forEach(p => {
+    const geo = new THREE.OctahedronGeometry(4);
+    let matColor = 0x10b981;
+    if (p.type === 'rapid') matColor = 0xf59e0b;
+    if (p.type === 'shield') matColor = 0x06b6d4;
+
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: matColor, emissive: matColor, emissiveIntensity: 0.5 }));
+    mesh.position.set(p.x, 8, p.z);
+    scene.add(mesh);
+    p.mesh = mesh;
+  });
+}
+
+// Start Main Game Flow
+function startGameLoop() {
+  document.getElementById('lobby-screen').classList.add('hidden');
+  document.getElementById('hud').classList.remove('hidden');
+  state = "play";
+  gameTime = 120;
+
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    if (state === "play") {
+      gameTime--;
+      const m = String(Math.floor(gameTime / 60)).padStart(2, '0');
+      const s = String(gameTime % 60).padStart(2, '0');
+      document.getElementById('hud-timer').innerText = `${m}:${s}`;
+      if (gameTime <= 0) endGame();
+    }
+  }, 1000);
+
+  sfx.init();
+}
+
+// ==========================================
+// 7. INPUT & CONTROLS HANDLERS
+// ==========================================
+window.addEventListener('keydown', e => {
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = true;
+  if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = true;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = true;
+  if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = true;
+  if (e.key === 'Shift') keys.shift = true;
+});
+
+window.addEventListener('keyup', e => {
+  if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
+  if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
+  if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = false;
+  if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
+  if (e.key === 'Shift') keys.shift = false;
+});
+
+// Raycasting for Mouse Aiming
+const raycaster = new THREE.Raycaster();
+const mouseVec = new THREE.Vector2();
+const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+window.addEventListener('mousemove', e => {
+  if (state !== 'play' || !me || isMobile) return;
+  mouseVec.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouseVec.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+  raycaster.setFromCamera(mouseVec, camera);
+  const targetPoint = new THREE.Vector3();
+  raycaster.ray.intersectPlane(floorPlane, targetPoint);
+
+  if (targetPoint) {
+    const dx = targetPoint.x - me.x;
+    const dz = targetPoint.z - me.z;
+    me.angle = Math.atan2(dx, dz);
+  }
+});
+
+window.addEventListener('mousedown', e => {
+  if (state === 'play' && me && me.alive && e.button === 0 && !isMobile) {
+    shootMeteorBullet(me);
+  }
+});
+
+// Mobile Touch Controls & Joystick Setup
+function setupMobileControls() {
+  const joyZone = document.getElementById('joystick-zone');
+  const joyBase = document.getElementById('joystick-base');
+  const joyStick = document.getElementById('joystick-stick');
+  let joyActive = false;
+  let joyTouchId = null;
+  let basePos = { x: 0, y: 0 };
+
+  joyZone.addEventListener('touchstart', e => {
+    isMobile = true;
+    const touch = e.changedTouches[0];
+    joyTouchId = touch.identifier;
+    joyActive = true;
+    joyBase.style.display = 'block';
+    const rect = joyZone.getBoundingClientRect();
+    basePos = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  });
+
+  window.addEventListener('touchmove', e => {
+    if (!joyActive) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === joyTouchId) {
+        const dx = touch.clientX - basePos.x;
+        const dy = touch.clientY - basePos.y;
+        const dist = Math.min(Math.hypot(dx, dy), 45);
+        const angle = Math.atan2(dy, dx);
+
+        const sx = Math.cos(angle) * dist;
+        const sy = Math.sin(angle) * dist;
+        joyStick.style.transform = `translate(${sx}px, ${sy}px)`;
+
+        joystickVector.x = sx / 45;
+        joystickVector.y = sy / 45;
+      }
+    }
+  });
+
+  const endJoy = e => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === joyTouchId) {
+        joyActive = false;
+        joyTouchId = null;
+        joystickVector = { x: 0, y: 0 };
+        joyStick.style.transform = 'translate(0px, 0px)';
+        joyBase.style.display = 'none';
+      }
+    }
+  };
+
+  window.addEventListener('touchend', endJoy);
+  window.addEventListener('touchcancel', endJoy);
+
+  // Mobile Buttons
+  document.getElementById('btn-mobile-fire').addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (me && me.alive) shootMeteorBullet(me);
+  });
+
+  document.getElementById('btn-mobile-dash').addEventListener('touchstart', e => {
+    e.preventDefault();
+    if (me && me.alive && me.dashTimer <= 0) me.dashTimer = 0.4;
+  });
+}
+setupMobileControls();
+
+// ==========================================
+// 8. METEOR BULLET & PARTICLE SYSTEM
+// ==========================================
+function shootMeteorBullet(p) {
+  if (p.fireCd > 0) return;
+  p.fireCd = p.rapidTimer > 0 ? 0.12 : 0.35;
+
+  const bulletSpeed = 160;
+  const bx = p.x + Math.sin(p.angle) * 8;
+  const bz = p.z + Math.cos(p.angle) * 8;
+
+  // Meteor Bullet Mesh (Sphere with Face Texture)
+  const bGeo = new THREE.SphereGeometry(3, 16, 16);
+  const bMat = new THREE.MeshBasicMaterial({ map: meteorTexture });
+  const mesh = new THREE.Mesh(bGeo, bMat);
+  mesh.position.set(bx, 15, bz);
+  scene.add(mesh);
+
+  // Meteor Fire Trail Light
+  const pLight = new THREE.PointLight(0xff5500, 1.5, 30);
+  mesh.add(pLight);
+
+  bullets.push({
+    id: Math.random().toString(36).substring(2, 9),
+    ownerId: p.id,
+    x: bx,
+    z: bz,
+    vx: Math.sin(p.angle) * bulletSpeed,
+    vz: Math.cos(p.angle) * bulletSpeed,
+    mesh: mesh,
+    life: 2.0
+  });
+
+  sfx.playMeteorShoot();
+}
+
+// Particle Explosion Effects on Impact
+function createExplosionParticles(x, z) {
+  sfx.playExplosion();
+  shakeTime = 0.25;
+
+  for (let i = 0; i < 20; i++) {
+    const pGeo = new THREE.DodecahedronGeometry(Math.random() * 2 + 1);
+    const pMat = new THREE.MeshBasicMaterial({
+      color: Math.random() > 0.5 ? 0xff5500 : 0xffcc00,
+      transparent: true,
+      opacity: 1.0
+    });
+    const pMesh = new THREE.Mesh(pGeo, pMat);
+    pMesh.position.set(x, 10 + (Math.random() - 0.5) * 8, z);
+    scene.add(pMesh);
+
+    particles.push({
+      mesh: pMesh,
+      vx: (Math.random() - 0.5) * 60,
+      vy: Math.random() * 40 + 20,
+      vz: (Math.random() - 0.5) * 60,
+      life: 0.5
+    });
+  }
+}
+
+// Trigger Screen Shake & Hitmarker
+function triggerHitmarker() {
+  sfx.playHit();
+  const hm = document.getElementById('hitmarker');
+  hm.classList.add('active');
+  setTimeout(() => hm.classList.remove('active'), 120);
+}
+
+// ==========================================
+// 9. GAME UPDATE LOOP (Physics & Logic)
+// ==========================================
+function update(dt) {
+  if (state !== 'play') return;
+
+  // Timers Update
+  if (shakeTime > 0) shakeTime -= dt;
+
+  // Process Local Player Movement
+  if (me && me.alive) {
+    let dx = 0;
+    let dz = 0;
+
+    if (!isMobile) {
+      if (keys.w) dz -= 1;
+      if (keys.s) dz += 1;
+      if (keys.a) dx -= 1;
+      if (keys.d) dx += 1;
+    } else {
+      dx = joystickVector.x;
+      dz = joystickVector.y;
+      if (Math.hypot(dx, dz) > 0.1) {
+        me.angle = Math.atan2(dx, dz);
+      }
+    }
+
+    const len = Math.hypot(dx, dz);
+    if (len > 0.1) {
+      const speedMult = me.dashTimer > 0 ? 1.8 : 1.0;
+      const currentSpeed = me.speed * speedMult;
+      me.x += (dx / (isMobile ? 1 : len)) * currentSpeed * dt;
+      me.z += (dz / (isMobile ? 1 : len)) * currentSpeed * dt;
+    }
+
+    // Map Boundary Collisions
+    me.x = Math.max(-110, Math.min(110, me.x));
+    me.z = Math.max(-150, Math.min(150, me.z));
+
+    if (keys.shift && me.dashTimer <= 0) me.dashTimer = 0.4;
+    if (me.dashTimer > 0) me.dashTimer -= dt;
+    if (me.fireCd > 0) me.fireCd -= dt;
+    if (me.shieldTimer > 0) me.shieldTimer -= dt;
+    if (me.rapidTimer > 0) me.rapidTimer -= dt;
+  }
+
+  // Update AI Bots
+  players.forEach(p => {
+    if (p.isBot && p.alive) {
+      // AI Logic: Track nearest target & shoot
+      let target = me.alive ? me : null;
+      if (target) {
+        const dist = Math.hypot(target.x - p.x, target.z - p.z);
+        p.angle = Math.atan2(target.x - p.x, target.z - p.z);
+
+        if (dist > 40) {
+          p.x += Math.sin(p.angle) * p.speed * 0.7 * dt;
+          p.z += Math.cos(p.angle) * p.speed * 0.7 * dt;
+        }
+
+        if (dist < 120 && Math.random() < 0.03) {
+          shootMeteorBullet(p);
+        }
+      }
+    }
+  });
+
+  // Update Bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i];
+    b.x += b.vx * dt;
+    b.z += b.vz * dt;
+    b.life -= dt;
+
+    if (b.mesh) {
+      b.mesh.position.set(b.x, 15, b.z);
+      b.mesh.rotation.y += dt * 5;
+    }
+
+    // Map Border Bullet Impact
+    let hitWall = Math.abs(b.x) > 115 || Math.abs(b.z) > 155;
+
+    // Player Bullet Collision
+    if (!hitWall) {
+      for (let j = 0; j < players.length; j++) {
+        const p = players[j];
+        if (p.alive && p.id !== b.ownerId) {
+          const dist = Math.hypot(p.x - b.x, p.z - b.z);
+          if (dist < 10) {
+            hitWall = true;
+            let dmg = 25;
+            if (p.shieldTimer > 0) dmg *= 0.5;
+
+            p.hp -= dmg;
+            if (b.ownerId === me.id) triggerHitmarker();
+
+            if (p.hp <= 0) {
+              p.hp = 0;
+              p.alive = false;
+              const killer = players.find(k => k.id === b.ownerId);
+              if (killer) killer.kills++;
+              setTimeout(() => respawnPlayer(p), 3000);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    if (hitWall || b.life <= 0) {
+      createExplosionParticles(b.x, b.z);
+      scene.remove(b.mesh);
+      bullets.splice(i, 1);
+    }
+  }
+
+  // Update Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const pt = particles[i];
+    pt.life -= dt;
+    pt.mesh.position.x += pt.vx * dt;
+    pt.mesh.position.y += pt.vy * dt;
+    pt.mesh.position.z += pt.vz * dt;
+    pt.vy -= 98 * dt; // Gravity
+    pt.mesh.material.opacity = pt.life / 0.5;
+
+    if (pt.life <= 0) {
+      scene.remove(pt.mesh);
+      particles.splice(i, 1);
+    }
+  }
+
+  // Update Pickups Collision
+  pickups.forEach(pk => {
+    if (pk.mesh) pk.mesh.rotation.y += dt * 2;
+    if (me && me.alive && Math.hypot(me.x - pk.x, me.z - pk.z) < 12) {
+      sfx.playPickup();
+      if (pk.type === 'hp') me.hp = Math.min(me.maxHp, me.hp + 40);
+      if (pk.type === 'rapid') me.rapidTimer = 8;
+      if (pk.type === 'shield') me.shieldTimer = 8;
+      pk.x = (Math.random() - 0.5) * 160;
+      pk.z = (Math.random() - 0.5) * 200;
+      pk.mesh.position.set(pk.x, 8, pk.z);
+    }
+  });
+
+  // Update HUD Display
+  updateHUD();
+
+  // PeerJS Networking Broadcast (if Host)
+  if (!isSolo && isHost) {
+    broadcastState();
+  }
+}
+
+function respawnPlayer(p) {
+  p.hp = 100;
+  p.alive = true;
+  p.x = (Math.random() - 0.5) * 160;
+  p.z = (Math.random() - 0.5) * 200;
+}
+
+// Update 3D Scene Rendering & Camera Tracking
+function render3D() {
+  if (me) {
+    // Camera Tracking Local Player with Shake Effect
+    const targetCamX = me.x + (shakeTime > 0 ? (Math.random() - 0.5) * 4 : 0);
+    const targetCamZ = me.z + 75 + (shakeTime > 0 ? (Math.random() - 0.5) * 4 : 0);
+
+    camera.position.set(targetCamX, 90, targetCamZ);
+    camera.lookAt(me.x, 15, me.z);
+  }
+
+  // Sync 3D Player Character Meshes
+  players.forEach(p => {
+    let vis = visP[p.id];
+    if (!vis) {
+      vis = createStudentCharacterMesh(p.color);
+      scene.add(vis);
+      visP[p.id] = vis;
+    }
+    vis.position.set(p.x, 0, p.z);
+    vis.rotation.y = p.angle;
+    vis.visible = p.alive;
+  });
+
+  renderer.render(scene, camera);
+}
+
+// Main Frame Loop
+function animationLoop(timestamp) {
+  const dt = Math.min((timestamp - (window._lastTime || timestamp)) / 1000, 0.05);
+  window._lastTime = timestamp;
+
+  update(dt);
+  render3D();
+
+  requestAnimationFrame(animationLoop);
+}
+
+// ==========================================
+// 10. HUD & UI RENDERER
+// ==========================================
+function updateHUD() {
+  if (!me) return;
+  document.getElementById('hud-player-name').innerText = me.name;
+  document.getElementById('hud-hp-text').innerText = `${Math.ceil(me.hp)} HP`;
+
+  const hpPercent = Math.max(0, (me.hp / me.maxHp) * 100);
+  document.getElementById('hud-hp-bar').style.width = `${hpPercent}%`;
+
+  // Status Buff Indicators
+  const weaponText = me.rapidTimer > 0 ? '🔥 연사 운석 폭격' : '☄️ 멸망의 운석';
+  document.getElementById('hud-weapon-status').innerHTML = `<i class="fa-solid fa-meteor"></i> ${weaponText}`;
+
+  const shieldText = me.shieldTimer > 0 ? '🛡️ 방어막 활성' : '노말 버프';
+  document.getElementById('hud-shield-status').innerHTML = `<i class="fa-solid fa-shield-halved text-cyan-400"></i> ${shieldText}`;
+
+  // Leaderboard
+  const sorted = [...players].sort((a, b) => b.kills - a.kills);
+  const lbContainer = document.getElementById('hud-leaderboard');
+  lbContainer.innerHTML = sorted.map((p, idx) => `
+    <div class="flex justify-between items-center ${p.id === me.id ? 'text-amber-400 font-bold' : 'text-gray-300'}">
+      <span>${idx + 1}. ${p.name}</span>
+      <span>${p.kills} 킬</span>
+    </div>
+  `).join('');
+}
+
+function endGame() {
+  state = "roundEnd";
+  if (timerInterval) clearInterval(timerInterval);
+
+  const sorted = [...players].sort((a, b) => b.kills - a.kills);
+  const winner = sorted[0];
+
+  document.getElementById('hud').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.remove('hidden');
+
+  document.getElementById('gameover-title').innerText = winner.id === me.id ? '🎉 MVP 최종 승리!' : `${winner.name} 승리!`;
+  document.getElementById('gameover-desc').innerText = `학교 복도 전장을 석권한 멸망의 수호자입니다!`;
+
+  document.getElementById('final-stats').innerHTML = sorted.map((p, i) => `
+    <div class="flex justify-between p-1.5 rounded ${i === 0 ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-gray-300'}">
+      <span>${i + 1}등. ${p.name}</span>
+      <span>${p.kills} KILLS (${p.hp > 0 ? '생존' : '처치됨'})</span>
+    </div>
+  `).join('');
+}
+
+// ==========================================
+// 11. MULTIPLAYER SYSTEM (PeerJS)
+// ==========================================
+function initMultiplayerPeer() {
+  peer = new Peer();
+
+  peer.on('open', id => {
+    console.log('PeerJS Connected with ID:', id);
+  });
+
+  peer.on('connection', conn => {
+    connections.push(conn);
+    setupConnection(conn);
+  });
+}
+
+function setupConnection(conn) {
+  conn.on('data', data => {
+    if (data.type === 'join') {
+      const newP = new Player(data.id, data.name, false, 0xff2d6f);
+      players.push(newP);
+    }
+    if (data.type === 'state' && !isHost) {
+      // Sync State from Host
+      data.players.forEach(sp => {
+        const lp = players.find(p => p.id === sp.id);
+        if (lp && lp.id !== me.id) {
+          lp.x = sp.x;
+          lp.z = sp.z;
+          lp.angle = sp.angle;
+          lp.hp = sp.hp;
+          lp.kills = sp.kills;
+          lp.alive = sp.alive;
+        } else if (!lp) {
+          players.push(new Player(sp.id, sp.name, false, 0xff2d6f));
+        }
+      });
+    }
+  });
+}
+
+function broadcastState() {
+  const pStates = players.map(p => ({
+    id: p.id, name: p.name, x: p.x, z: p.z, angle: p.angle, hp: p.hp, kills: p.kills, alive: p.alive
+  }));
+
+  connections.forEach(conn => {
+    if (conn.open) {
+      conn.send({ type: 'state', players: pStates });
+    }
+  });
+}
+
+// ==========================================
+// 12. UI BUTTON BINDINGS & INIT
+// ==========================================
+window.addEventListener('load', () => {
+  init3D();
+  initMultiplayerPeer();
+  requestAnimationFrame(animationLoop);
+
+  // Tab Switching
+  document.getElementById('tab-solo').addEventListener('click', () => {
+    isSolo = true;
+    document.getElementById('tab-solo').className = 'py-2.5 rounded-lg text-xs font-bold transition-all bg-amber-500 text-slate-950 shadow';
+    document.getElementById('tab-multi').className = 'py-2.5 rounded-lg text-xs font-bold text-gray-400 transition-all hover:text-white';
+    document.getElementById('multi-options').classList.add('hidden');
+  });
+
+  document.getElementById('tab-multi').addEventListener('click', () => {
+    isSolo = false;
+    document.getElementById('tab-multi').className = 'py-2.5 rounded-lg text-xs font-bold transition-all bg-cyan-500 text-slate-950 shadow';
+    document.getElementById('tab-solo').className = 'py-2.5 rounded-lg text-xs font-bold text-gray-400 transition-all hover:text-white';
+    document.getElementById('multi-options').classList.remove('hidden');
+  });
+
+  // Start Game Button
+  document.getElementById('btn-start-game').addEventListener('click', () => {
+    setupLocalGame();
+  });
+
+  // Multi Rooms Setup
+  document.getElementById('btn-create-room').addEventListener('click', () => {
+    isHost = true;
+    roomCode = "HW" + Math.floor(1000 + Math.random() * 9000);
+    document.getElementById('hud-room-code').innerText = `ROOM: ${roomCode}`;
+    alert(`새로운 방이 생성되었습니다!\n방 코드: ${roomCode}\n친구에게 전달하여 함께 플레이하세요!`);
+    setupLocalGame();
+  });
+
+  document.getElementById('btn-join-room').addEventListener('click', () => {
+    const code = document.getElementById('input-room-code').value.trim();
+    if (!code) return alert('방 코드를 입력해주세요!');
+    isHost = false;
+    setupLocalGame();
+  });
+
+  // Restart Button
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    document.getElementById('gameover-screen').classList.add('hidden');
+    document.getElementById('lobby-screen').classList.remove('hidden');
+    state = "lobby";
+  });
+
+  // Toggle Sound
+  document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+    sfx.enabled = !sfx.enabled;
+    const icon = document.getElementById('icon-sound');
+    const text = document.getElementById('text-sound');
+    if (sfx.enabled) {
+      icon.className = "fa-solid fa-volume-high text-emerald-400";
+      text.innerText = "사운드 ON";
+    } else {
+      icon.className = "fa-solid fa-volume-xmark text-gray-500";
+      text.innerText = "사운드 OFF";
+    }
+  });
+});
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
 </script>
 </body>
 </html>
