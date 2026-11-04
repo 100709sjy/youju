@@ -320,6 +320,7 @@
 <script>
 /**
  * 현욱이게임 3D ENGINE & MULTIPLAYER SYSTEM
+ * Fixed WebGL Black Screen & CORS Issue with Procedural Textures
  */
 
 // ==========================================
@@ -343,80 +344,87 @@ class SoundFX {
 
   playMeteorShoot() {
     if (!this.enabled || !this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(440, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.25);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(110, this.ctx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.25);
+    } catch(e){}
   }
 
   playExplosion() {
     if (!this.enabled || !this.ctx) return;
-    const bufferSize = this.ctx.sampleRate * 0.4;
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    const noise = this.ctx.createBufferSource();
-    noise.buffer = buffer;
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
-    filter.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.4);
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-    noise.start();
+    try {
+      const bufferSize = this.ctx.sampleRate * 0.4;
+      const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
+      const noise = this.ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+      filter.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.4);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+      noise.start();
+    } catch(e){}
   }
 
   playHit() {
     if (!this.enabled || !this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(880, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.1);
-    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.1);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(220, this.ctx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.1);
+    } catch(e){}
   }
 
   playPickup() {
     if (!this.enabled || !this.ctx) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
-    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); // E5
-    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16); // G5
-    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.3);
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08);
+      osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.16);
+      gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.3);
+    } catch(e){}
   }
 }
 
 const sfx = new SoundFX();
 
 // ==========================================
-// 2. CANVAS TEXTURE GENERATOR (Procedural Textures)
+// 2. PROCEDURAL TEXTURE GENERATORS
 // ==========================================
-// A. Face Meteor Texture (User Image 1 representation: Meteor + Glowing face with glasses)
 function generateMeteorFaceTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -428,7 +436,7 @@ function generateMeteorFaceTexture() {
   grad.addColorStop(0, '#ffe600');
   grad.addColorStop(0.3, '#ff5500');
   grad.addColorStop(0.7, '#880000');
-  grad.addColorStop(1, 'transparent');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, 512, 512);
 
@@ -453,11 +461,8 @@ function generateMeteorFaceTexture() {
   // Glasses Frame
   ctx.strokeStyle = '#000000';
   ctx.lineWidth = 10;
-  // Left Lens
   ctx.strokeRect(180, 220, 65, 45);
-  // Right Lens
   ctx.strokeRect(267, 220, 65, 45);
-  // Bridge
   ctx.beginPath();
   ctx.moveTo(245, 238);
   ctx.lineTo(267, 238);
@@ -470,22 +475,15 @@ function generateMeteorFaceTexture() {
   ctx.arc(300, 242, 10, 0, Math.PI * 2);
   ctx.fill();
 
-  // Cool Smirk Mouth
+  // Mouth
   ctx.beginPath();
   ctx.arc(256, 290, 30, 0.1, Math.PI - 0.1);
   ctx.lineWidth = 6;
   ctx.stroke();
 
-  // Flame Accents over Face
-  ctx.fillStyle = 'rgba(255, 100, 0, 0.3)';
-  ctx.beginPath();
-  ctx.arc(256, 256, 170, 0, Math.PI * 2);
-  ctx.fill();
-
   return new THREE.CanvasTexture(canvas);
 }
 
-// B. School Hallway Sign Texture (User Image 2 Toilet / 화장실 Sign)
 function generateToiletSignTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
@@ -498,23 +496,20 @@ function generateToiletSignTexture() {
   ctx.lineWidth = 8;
   ctx.strokeRect(6, 6, 244, 116);
 
-  // Top Accent Bar
   ctx.fillStyle = '#0284c7';
   ctx.fillRect(10, 10, 236, 28);
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 18px "Noto Sans KR", sans-serif';
+  ctx.font = 'bold 18px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText('Toilet', 128, 30);
 
-  // Korean Text
   ctx.fillStyle = '#0f172a';
-  ctx.font = 'bold 42px "Noto Sans KR", sans-serif';
+  ctx.font = 'bold 42px sans-serif';
   ctx.fillText('화장실', 128, 88);
 
   return new THREE.CanvasTexture(canvas);
 }
 
-// C. School Floor Tile Texture
 function generateFloorTileTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 512;
@@ -524,19 +519,12 @@ function generateFloorTileTexture() {
   ctx.fillStyle = '#cfd8dc';
   ctx.fillRect(0, 0, 512, 512);
 
-  // Grid Grout Lines
   ctx.strokeStyle = '#90a4ae';
   ctx.lineWidth = 4;
   const size = 64;
   for (let x = 0; x <= 512; x += size) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 512); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, x); ctx.lineTo(512, x); ctx.stroke();
-  }
-
-  // Polished Marble Specks
-  ctx.fillStyle = 'rgba(0,0,0,0.04)';
-  for (let i = 0; i < 500; i++) {
-    ctx.fillRect(Math.random() * 512, Math.random() * 512, 4, 4);
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -546,7 +534,6 @@ function generateFloorTileTexture() {
   return texture;
 }
 
-// D. Wall Panel Texture
 function generateWallTexture() {
   const canvas = document.createElement('canvas');
   canvas.width = 256;
@@ -555,7 +542,6 @@ function generateWallTexture() {
 
   ctx.fillStyle = '#e2e8f0';
   ctx.fillRect(0, 0, 256, 256);
-  // Bottom Wainscoting (Marble Trim matching image 2)
   ctx.fillStyle = '#cbd5e1';
   ctx.fillRect(0, 180, 256, 76);
   ctx.strokeStyle = '#94a3b8';
@@ -570,7 +556,7 @@ function generateWallTexture() {
 }
 
 // ==========================================
-// 3. GAME STATE & VARIABLES
+// 3. GAME STATE & SETUP
 // ==========================================
 let scene, camera, renderer;
 let me = null;
@@ -578,32 +564,28 @@ let players = [];
 let bullets = [];
 let particles = [];
 let pickups = [];
-let visP = {}; // Mesh references by player ID
+let visP = {};
 let meteorTexture, floorTexture, wallTexture, signTexture;
 
 let isSolo = true;
-let state = "lobby"; // lobby, play, roundEnd
-let gameTime = 120; // 2 minutes
+let state = "lobby";
+let gameTime = 120;
 let timerInterval = null;
 let shakeTime = 0;
 
-// Input State
 const keys = { w: false, a: false, s: false, d: false, shift: false };
-let mouseAngle = 0;
 let joystickVector = { x: 0, y: 0 };
 let isMobile = false;
 
-// PeerJS Networking
 let peer = null;
 let roomCode = "";
 let connections = [];
 let isHost = false;
 
-// ==========================================
-// 4. THREE.JS SCENE SETUP & MAP CREATION
-// ==========================================
 function init3D() {
   const container = document.getElementById('game-container');
+  container.innerHTML = '';
+
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x0a0c14);
   scene.fog = new THREE.FogExp2(0x0a0c14, 0.015);
@@ -616,56 +598,44 @@ function init3D() {
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   container.appendChild(renderer.domElement);
 
-  // Generate Procedural Textures
+  // Generate Procedural Canvas Textures
   meteorTexture = generateMeteorFaceTexture();
   floorTexture = generateFloorTileTexture();
   wallTexture = generateWallTexture();
   signTexture = generateToiletSignTexture();
 
-  // Lights
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
   scene.add(ambientLight);
 
   const dirLight = new THREE.DirectionalLight(0xffeedd, 0.8);
   dirLight.position.set(50, 100, 50);
   dirLight.castShadow = true;
-  dirLight.shadow.mapSize.width = 1024;
-  dirLight.shadow.mapSize.height = 1024;
-  dirLight.shadow.camera.near = 0.5;
-  dirLight.shadow.camera.far = 250;
-  dirLight.shadow.camera.left = -150;
-  dirLight.shadow.camera.right = 150;
-  dirLight.shadow.camera.top = 150;
-  dirLight.shadow.camera.bottom = -150;
   scene.add(dirLight);
 
-  // Create High School Corridor Arena Map
   buildSchoolHallwayMap();
-
   window.addEventListener('resize', onWindowResize);
 }
 
-// Build School Hallway Arena Map (Based on Image 2)
 function buildSchoolHallwayMap() {
   const MAP_W = 240;
   const MAP_H = 320;
   const WALL_H = 50;
 
-  // Floor
+  // Floor & Ceiling
   const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: 0.3, metalness: 0.1 });
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W, MAP_H), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
   scene.add(floor);
 
-  // Ceiling
   const ceilMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.8 });
   const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(MAP_W, MAP_H), ceilMat);
   ceiling.position.y = WALL_H;
   ceiling.rotation.x = Math.PI / 2;
   scene.add(ceiling);
 
-  // Hallway Fluorescent Ceiling Lights
+  // Ceiling Lights
   for (let z = -MAP_H / 2 + 40; z < MAP_H / 2; z += 60) {
     const lightBox = new THREE.Mesh(
       new THREE.BoxGeometry(20, 1, 8),
@@ -673,15 +643,10 @@ function buildSchoolHallwayMap() {
     );
     lightBox.position.set(0, WALL_H - 0.5, z);
     scene.add(lightBox);
-
-    const pointLight = new THREE.PointLight(0xfff5ea, 0.6, 90);
-    pointLight.position.set(0, WALL_H - 5, z);
-    scene.add(pointLight);
   }
 
   // Outer Walls
   const wallMat = new THREE.MeshStandardMaterial({ map: wallTexture, roughness: 0.5 });
-
   function addWall(w, h, d, x, y, z) {
     const wall = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), wallMat);
     wall.position.set(x, y, z);
@@ -690,31 +655,17 @@ function buildSchoolHallwayMap() {
     scene.add(wall);
   }
 
-  // Perimeter Walls
-  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, -MAP_H / 2); // North
-  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, MAP_H / 2);  // South
-  addWall(4, WALL_H, MAP_H, -MAP_W / 2, WALL_H / 2, 0); // West
-  addWall(4, WALL_H, MAP_H, MAP_W / 2, WALL_H / 2, 0);  // East
+  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, -MAP_H / 2);
+  addWall(MAP_W, WALL_H, 4, 0, WALL_H / 2, MAP_H / 2);
+  addWall(4, WALL_H, MAP_H, -MAP_W / 2, WALL_H / 2, 0);
+  addWall(4, WALL_H, MAP_H, MAP_W / 2, WALL_H / 2, 0);
 
-  // Inner Classroom Obstacle Walls (Creating School Corridor Loops)
+  // Obstacle Walls
   addWall(80, WALL_H, 10, -40, WALL_H / 2, -60);
   addWall(80, WALL_H, 10, 40, WALL_H / 2, 60);
   addWall(10, WALL_H, 90, 0, WALL_H / 2, 0);
 
-  // Classroom Doors
-  const doorMat = new THREE.MeshStandardMaterial({ color: 0x8b5cf6, roughness: 0.6 });
-  const door1 = new THREE.Mesh(new THREE.BoxGeometry(18, 32, 2), doorMat);
-  door1.position.set(-40, 16, -54);
-  scene.add(door1);
-
-  // Toilet Sign Hanging from Ceiling (Matching Image 2 Toilet Sign)
-  const signHolder = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.5, 0.5, 10),
-    new THREE.MeshBasicMaterial({ color: 0x333333 })
-  );
-  signHolder.position.set(0, WALL_H - 5, -50);
-  scene.add(signHolder);
-
+  // Toilet Sign
   const signMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(24, 12),
     new THREE.MeshBasicMaterial({ map: signTexture, side: THREE.DoubleSide })
