@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>현욱이게임</title>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
 :root{color-scheme:dark;--c1:#00e5ff;--c2:#ff2d6f;--ok:#2dff9a;--mu:#8b8fb8;box-sizing:border-box}
 *{margin:0;padding:0;box-sizing:inherit;-webkit-tap-highlight-color:transparent}
@@ -235,6 +233,7 @@ function resetRound(){
 }
 
 function begin(ids,mi){
+  if(!window.GL_OK){setStatus("⚠ 3D 엔진 로딩 중이거나 불러오지 못했어요. 잠시 후 다시 시도하거나 인터넷/WebGL을 확인하세요.");show("lobby");return}
   if(mi!==undefined) curMi = +mi;
   const n=typeof ids==="number"?ids:ids.length;
   updateMapSizeForUsers(n);
@@ -429,6 +428,224 @@ function update(dt){
   sendT-=dt;if(!isAI&&sendT<=0){sendT=.045;send({t:"s",x:me.x,y:me.y,a:me.a,hp:me.hp,d:me.dash,sh:me.sh,w:me.w})}
 }
 
+/* 3D는 아래 별도 <script>에서 로드 */
+function setMap(){}function resetVis(){}function render(){}
+
+/* ---------- 방 (PeerJS 대전) ---------- */
+const PRE="hyeonuk-fps-";
+function setStatus(m){$("status").textContent=m}
+function send(m){if(isAI||!peer)return;if(isHost){m.f=myId;for(const c of conns)if(c.open)c.send(m)}else if(conn&&conn.open)conn.send(m)}
+function hostIds(){return[0,...conns.filter(c=>c.open).map(c=>c.pid)]}
+function closeNet(){const p=peer,c=conn;peer=conn=null;conns=[];isHost=false;try{c&&c.close()}catch(e){}try{p&&p.destroy()}catch(e){}}
+function updLobby(){const n=hostIds().length;setStatus("방 코드 "+roomCode+" · 접속 "+n+"/8");$("startBtn").classList.toggle("hide",!(isHost&&n>=2))}
+function onNet(m,c){
+  if(isHost&&c){m.f=c.pid;for(const o of conns)if(o!==c&&o.open)o.send(m)}
+  const p=byId(m.f);
+  switch(m.t){
+    case"go":if(!isHost){isAI=false;begin(m.ids,m.m)}break;
+    case"b":bullets.push({x:m.x,y:m.y,vx:m.vx,vy:m.vy,o:m.f,life:m.l,bn:0,d:m.d,exp:m.exp||0});break;
+    case"pk":if(pickups[m.n])pickups[m.n].cd=PCD[pickups[m.n].k];break;
+    case"k":if(p&&p.alive){p.hp=0;p.alive=false;boom(p.x,p.y,p.col);checkEnd()}break;
+    case"s":if(p&&p!==me){p.tx=m.x;p.ty=m.y;p.a=m.a;p.hp=m.hp;p.dash=m.d;p.sh=m.sh;p.w=m.w}break;
+  }
+}
+function createRoom(tries){
+  if(typeof Peer==="undefined"){setStatus("네트워크 라이브러리를 불러오지 못했어요");return}
+  closeNet();isAI=false;isHost=true;myId=0;nextId=1;
+  roomCode=String(Math.floor(10000+Math.random()*90000));setStatus("방 만드는 중...");
+  const pr=peer=new Peer(PRE+roomCode);
+  pr.on("open",updLobby);
+  pr.on("connection",c=>{
+    if(state!=="lobby"||hostIds().length>=8){c.on("open",()=>{c.send({t:"full"});setTimeout(()=>c.close(),300)});return}
+    c.pid=nextId++;
+    c.on("open",()=>{conns.push(c);c.send({t:"id",id:c.pid});updLobby()});
+    c.on("data",m=>onNet(m,c));
+    c.on("close",()=>{conns=conns.filter(x=>x!==c);if(state==="lobby")updLobby();else{for(const o of conns)if(o.open)o.send({t:"k",f:c.pid});onNet({t:"k",f:c.pid})}});
+  });
+  pr.on("error",e=>{if(e.type==="unavailable-id"&&(tries||0)<5)createRoom((tries||0)+1);else setStatus("오류: "+e.type)});
+}
+function joinRoom(){
+  if(typeof Peer==="undefined"){setStatus("네트워크 라이브러리를 불러오지 못했어요");return}
+  const code=$("roomInput").value.trim();if(!code){setStatus("방 코드를 입력하세요");return}
+  closeNet();isAI=false;isHost=false;myId=-1;setStatus("접속 중...");
+  const pr=peer=new Peer();
+  pr.on("open",()=>{
+    const c=conn=pr.connect(PRE+code,{reliable:true});
+    c.on("open",()=>setStatus("접속 완료! 방장이 시작하기를 기다리는 중..."));
+    c.on("data",m=>{if(m.t==="id")myId=m.id;else if(m.t==="full"){closeNet();setStatus("방이 가득 찼거나 이미 시작됐어요")}else onNet(m)});
+    c.on("close",()=>{if(conn!==c)return;toLobby();setStatus("방장과 연결이 끊어졌어요")});
+  });
+  pr.on("error",e=>setStatus(e.type==="peer-unavailable"?"방을 찾을 수 없어요":"오류: "+e.type));
+}
+function hostStart(){const ids=hostIds();if(ids.length<2)return;const m=+$("mapSel").value;send({t:"go",ids,m});begin(ids,m)}
+function toLobby(){
+  closeNet();state="lobby";P=[];me=null;bullets=[];parts=[];resetVis();
+  $("wrap").classList.remove("playing");$("touchUI").classList.remove("show");detachTouch();
+  $("startBtn").classList.add("hide");setStatus("");
+  curMi=+$("mapSel").value;updateMapSizeForUsers(2);setMap(curMi);show("lobby");
+}
+function addWin(){if(!user||user.guest)return;const s=ld(LS.s,"{}");s[user.nick]=(s[user.nick]||0)+1;sv(LS.s,s);sendGlobalScoreSync(user.nick,s[user.nick])}
+
+/* ---------- 글로벌 채팅 / 랭킹 (PeerJS 허브) ---------- */
+const GID="hyeonuk-global-hub-v2";
+let gpeer=null,gConns=[],isGHost=false,gStarted=false,gscores=ld(LS.g,"{}");
+function chatLine(h){const l=$("globalChatLog"),d=document.createElement("div");d.innerHTML=h;l.appendChild(d);while(l.children.length>60)l.removeChild(l.firstChild);l.scrollTop=l.scrollHeight}
+const sysLine=t=>chatLine('<span class="sys">'+esc(t)+'</span>');
+function gBroadcast(m,except){for(const c of gConns)if(c!==except&&c.open)c.send(m)}
+function gOnline(){if(!isGHost)return;const n=1+gConns.filter(c=>c.open).length;$("onlineCount").textContent="접속 "+n+"명";gBroadcast({t:"on",n})}
+function gHandle(m,from){
+  if(!m||typeof m!=="object")return;
+  if(m.t==="chat"){m={t:"chat",n:String(m.n||"").slice(0,12),m:String(m.m||"").slice(0,100)};if(isGHost)gBroadcast(m);chatLine("<b>"+esc(m.n)+"</b> "+esc(m.m))}
+  else if(m.t==="gs"){m={t:"gs",n:String(m.n||"").slice(0,12),v:Math.max(0,+m.v||0)};if(!m.n)return;gscores[m.n]=m.v;sv(LS.g,gscores);if(isGHost)gBroadcast(m,from)}
+  else if(m.t==="gsall"&&m.s&&typeof m.s==="object"){for(const k in m.s)gscores[String(k).slice(0,12)]=Math.max(gscores[k]||0,+m.s[k]||0);sv(LS.g,gscores)}
+  else if(m.t==="on")$("onlineCount").textContent="접속 "+(+m.n||1)+"명";
+}
+function gSend(m){if(isGHost)gHandle(m,null);else if(gConns[0]&&gConns[0].open)gConns[0].send(m)}
+function sendGlobalScoreSync(n,v){gscores[n]=v;sv(LS.g,gscores);gSend({t:"gs",n,v})}
+function gSyncSelf(){if(user&&!user.guest){const v=ld(LS.s,"{}")[user.nick];if(v)sendGlobalScoreSync(user.nick,v)}}
+function startG(){
+  try{gpeer&&gpeer.destroy()}catch(e){}
+  gConns=[];isGHost=false;
+  const hub=gpeer=new Peer(GID);
+  hub.on("open",()=>{isGHost=true;sysLine("채팅 서버 준비 완료");gOnline();gSyncSelf()});
+  hub.on("connection",c=>{
+    c.on("open",()=>{gConns.push(c);c.send({t:"gsall",s:gscores});gOnline()});
+    c.on("data",m=>gHandle(m,c));
+    c.on("close",()=>{gConns=gConns.filter(x=>x!==c);gOnline()});
+  });
+  hub.on("error",e=>{
+    if(e.type==="unavailable-id"){
+      try{hub.destroy()}catch(_){}
+      const cl=gpeer=new Peer();
+      cl.on("open",()=>{
+        const c=cl.connect(GID,{reliable:true});gConns=[c];
+        c.on("open",()=>{sysLine("글로벌 채팅 연결됨");gSyncSelf()});
+        c.on("data",m=>gHandle(m,c));
+        c.on("close",()=>{gConns=[];$("onlineCount").textContent="재연결 중...";setTimeout(startG,2000+Math.random()*3000)});
+      });
+      cl.on("error",e2=>{if(e2.type==="peer-unavailable")setTimeout(startG,1500+Math.random()*2500)});
+    }else{sysLine("채팅 연결 실패: "+e.type);setTimeout(startG,8000)}
+  });
+}
+function initGlobalChat(n){if(gStarted)return;if(typeof Peer==="undefined"){if((n||0)<15)setTimeout(()=>initGlobalChat((n||0)+1),1000);else sysLine("채팅 서버를 불러오지 못했어요");return}gStarted=true;sysLine("글로벌 서버에 연결 중...");startG()}
+function sendChat(){const i=$("globalChatIn"),x=i.value.trim();if(!x)return;i.value="";if(!isGHost&&!(gConns[0]&&gConns[0].open)){sysLine("아직 연결 중이에요");return}gSend({t:"chat",n:user?user.nick:"게스트",m:x})}
+$("globalChatSend").onclick=sendChat;
+$("globalChatIn").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+function showLB(){
+  const m=Object.assign({},gscores),l=ld(LS.s,"{}");for(const k in l)m[k]=Math.max(m[k]||0,l[k]);
+  const a=Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,50);
+  $("lbList").innerHTML=a.length?a.map(([n,v],i)=>`<div class="lbi"><i>${i+1}</i><span style="flex:1">${esc(n)}</span><em>${v}승</em></div>`).join(""):'<div class="sub">아직 기록이 없어요</div>';
+  show("lboard");
+}
+$("btnLB").onclick=showLB;
+$("btnCloseLB").onclick=()=>show(user?"lobby":"auth");
+
+/* 입력 / 루프 및 DOM 이벤트 바인딩 */
+function startAI(d){isAI=true;D=DIFF[d];myId=0;begin(+$("modeSel").value,+$("mapSel").value)}
+
+(() => {
+  $("bEasy").onclick=()=>startAI("easy");
+  $("bNorm").onclick=()=>startAI("normal");
+  $("bHard").onclick=()=>startAI("hard");
+  $("btnCreate").onclick=()=>createRoom(0);
+  $("btnJoin").onclick=joinRoom;
+  $("startBtn").onclick=hostStart;
+  $("btnRe").onclick=rematch;
+  $("btnLobby").onclick=toLobby;
+
+  $("btnSignup").onclick = () => {
+    const n=$("aNick").value.trim(),p=$("aPw").value,m=$("aMsg"),u=ld(LS.u,"{}");
+    if(n.length<2||n.length>12){m.textContent="닉네임 2~12자";return}
+    if(p.length<2){m.textContent="비밀번호 2자 이상";return}
+    if(u[n]){m.textContent="이미 있는 닉네임";return}
+    u[n]=hash(p);sv(LS.u,u);const s=ld(LS.s,"{}");s[n]=s[n]||0;sv(LS.s,s);loginAs(n);
+  };
+
+  $("btnLogin").onclick = () => {
+    const n=$("aNick").value.trim(),u=ld(LS.u,"{}");
+    if(!u[n]||u[n]!==hash($("aPw").value)){$("aMsg").textContent="닉네임/비밀번호 틀림";return}
+    loginAs(n);
+  };
+
+  $("btnGuest").onclick = () => {
+    user={nick:"게스트_"+Math.floor(1000+Math.random()*9000),guest:true};
+    try{localStorage.removeItem(LS.c)}catch(e){}
+    show("lobby");ubar();initGlobalChat();
+  };
+
+  $("logoutBtn").onclick = () => {
+    user=null;try{localStorage.removeItem(LS.c)}catch(e){}
+    show("auth");ubar();
+  };
+
+  $("btnEditNick").onclick=()=>{
+    if(!user||user.guest) return;
+    const newNick = prompt("새로운 닉네임을 입력하세요 (2~12자):", user.nick);
+    if(!newNick) return;
+    const trimmed = newNick.trim();
+    if(trimmed.length < 2 || trimmed.length > 12){
+      alert("닉네임은 2~12자여야 합니다.");
+      return;
+    }
+    const users = ld(LS.u, "{}");
+    if(users[trimmed] && trimmed !== user.nick){
+      alert("이미 존재하는 닉네임입니다.");
+      return;
+    }
+    const oldNick = user.nick;
+    const passHash = users[oldNick];
+    delete users[oldNick];
+    users[trimmed] = passHash;
+    sv(LS.u, users);
+
+    const scores = ld(LS.s, "{}");
+    scores[trimmed] = scores[oldNick] || 0;
+    delete scores[oldNick];
+    sv(LS.s, scores);
+
+    user.nick = trimmed;
+    sv(LS.c, user);
+    ubar();
+    alert("닉네임이 변경되었습니다!");
+    
+    if(isGHost||(gConns[0]&&gConns[0].open)){
+      sendGlobalScoreSync(trimmed, scores[trimmed]);
+    }
+  };
+
+  const c = ld(LS.c, "null");
+  if(c && c.nick){
+    user = c;
+    show("lobby");
+    initGlobalChat();
+  } else {
+    show("auth");
+  }
+  ubar();
+})();
+
+[["bF",x=>tF=x],["bD",x=>tD=x],["bU",x=>tU=x]].forEach(([id,f])=>{const el=$(id),h=x=>e=>{f(x);e.preventDefault();e.stopPropagation()};el.addEventListener("touchstart",h(true),{passive:false});el.addEventListener("touchend",h(false),{passive:false});el.addEventListener("touchcancel",h(false),{passive:false})});
+$("bW").addEventListener("touchstart",e=>{cycleWeapon();e.preventDefault();e.stopPropagation()},{passive:false});
+
+addEventListener("keydown",e=>{
+  if(e.target&&/INPUT|SELECT/.test(e.target.tagName))return;
+  const k=e.key.toLowerCase();
+  if(!keys[k]){
+    if(k==="r")cycleWeapon();
+    else if(k>="1"&&k<="5")cycleWeapon(+k-1);
+  }
+  keys[k]=true;if(e.key===" "||e.key.startsWith("Arrow"))e.preventDefault();});
+addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
+addEventListener("blur",()=>{keys={}});
+
+addEventListener("load",()=>{if(!window.GL_OK)setStatus("⚠ 3D 엔진(three.js)을 불러오지 못했어요. 인터넷 연결이나 WebGL 지원을 확인하세요.")});
+let last=performance.now();
+function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;update(dt);if(window.GL_OK)render();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
 /* 3D */
 let vis={},bm=[],pks=[],mapG=null;const gc={};
 const scene=new THREE.Scene();
@@ -536,214 +753,8 @@ function render(){
 }
 
 
-/* ---------- 방 (PeerJS 대전) ---------- */
-const PRE="hyeonuk-fps-";
-function setStatus(m){$("status").textContent=m}
-function send(m){if(isAI||!peer)return;if(isHost){m.f=myId;for(const c of conns)if(c.open)c.send(m)}else if(conn&&conn.open)conn.send(m)}
-function hostIds(){return[0,...conns.filter(c=>c.open).map(c=>c.pid)]}
-function closeNet(){const p=peer,c=conn;peer=conn=null;conns=[];isHost=false;try{c&&c.close()}catch(e){}try{p&&p.destroy()}catch(e){}}
-function updLobby(){const n=hostIds().length;setStatus("방 코드 "+roomCode+" · 접속 "+n+"/8");$("startBtn").classList.toggle("hide",!(isHost&&n>=2))}
-function onNet(m,c){
-  if(isHost&&c){m.f=c.pid;for(const o of conns)if(o!==c&&o.open)o.send(m)}
-  const p=byId(m.f);
-  switch(m.t){
-    case"go":if(!isHost){isAI=false;begin(m.ids,m.m)}break;
-    case"b":bullets.push({x:m.x,y:m.y,vx:m.vx,vy:m.vy,o:m.f,life:m.l,bn:0,d:m.d,exp:m.exp||0});break;
-    case"pk":if(pickups[m.n])pickups[m.n].cd=PCD[pickups[m.n].k];break;
-    case"k":if(p&&p.alive){p.hp=0;p.alive=false;boom(p.x,p.y,p.col);checkEnd()}break;
-    case"s":if(p&&p!==me){p.tx=m.x;p.ty=m.y;p.a=m.a;p.hp=m.hp;p.dash=m.d;p.sh=m.sh;p.w=m.w}break;
-  }
-}
-function createRoom(tries){
-  closeNet();isAI=false;isHost=true;myId=0;nextId=1;
-  roomCode=String(Math.floor(10000+Math.random()*90000));setStatus("방 만드는 중...");
-  const pr=peer=new Peer(PRE+roomCode);
-  pr.on("open",updLobby);
-  pr.on("connection",c=>{
-    if(state!=="lobby"||hostIds().length>=8){c.on("open",()=>{c.send({t:"full"});setTimeout(()=>c.close(),300)});return}
-    c.pid=nextId++;
-    c.on("open",()=>{conns.push(c);c.send({t:"id",id:c.pid});updLobby()});
-    c.on("data",m=>onNet(m,c));
-    c.on("close",()=>{conns=conns.filter(x=>x!==c);if(state==="lobby")updLobby();else{for(const o of conns)if(o.open)o.send({t:"k",f:c.pid});onNet({t:"k",f:c.pid})}});
-  });
-  pr.on("error",e=>{if(e.type==="unavailable-id"&&(tries||0)<5)createRoom((tries||0)+1);else setStatus("오류: "+e.type)});
-}
-function joinRoom(){
-  const code=$("roomInput").value.trim();if(!code){setStatus("방 코드를 입력하세요");return}
-  closeNet();isAI=false;isHost=false;myId=-1;setStatus("접속 중...");
-  const pr=peer=new Peer();
-  pr.on("open",()=>{
-    const c=conn=pr.connect(PRE+code,{reliable:true});
-    c.on("open",()=>setStatus("접속 완료! 방장이 시작하기를 기다리는 중..."));
-    c.on("data",m=>{if(m.t==="id")myId=m.id;else if(m.t==="full"){closeNet();setStatus("방이 가득 찼거나 이미 시작됐어요")}else onNet(m)});
-    c.on("close",()=>{if(conn!==c)return;toLobby();setStatus("방장과 연결이 끊어졌어요")});
-  });
-  pr.on("error",e=>setStatus(e.type==="peer-unavailable"?"방을 찾을 수 없어요":"오류: "+e.type));
-}
-function hostStart(){const ids=hostIds();if(ids.length<2)return;const m=+$("mapSel").value;send({t:"go",ids,m});begin(ids,m)}
-function toLobby(){
-  closeNet();state="lobby";P=[];me=null;bullets=[];parts=[];resetVis();
-  $("wrap").classList.remove("playing");$("touchUI").classList.remove("show");detachTouch();
-  $("startBtn").classList.add("hide");setStatus("");
-  curMi=+$("mapSel").value;updateMapSizeForUsers(2);setMap(curMi);show("lobby");
-}
-function addWin(){if(!user||user.guest)return;const s=ld(LS.s,"{}");s[user.nick]=(s[user.nick]||0)+1;sv(LS.s,s);sendGlobalScoreSync(user.nick,s[user.nick])}
 
-/* ---------- 글로벌 채팅 / 랭킹 (PeerJS 허브) ---------- */
-const GID="hyeonuk-global-hub-v2";
-let gpeer=null,gConns=[],isGHost=false,gStarted=false,gscores=ld(LS.g,"{}");
-function chatLine(h){const l=$("globalChatLog"),d=document.createElement("div");d.innerHTML=h;l.appendChild(d);while(l.children.length>60)l.removeChild(l.firstChild);l.scrollTop=l.scrollHeight}
-const sysLine=t=>chatLine('<span class="sys">'+esc(t)+'</span>');
-function gBroadcast(m,except){for(const c of gConns)if(c!==except&&c.open)c.send(m)}
-function gOnline(){if(!isGHost)return;const n=1+gConns.filter(c=>c.open).length;$("onlineCount").textContent="접속 "+n+"명";gBroadcast({t:"on",n})}
-function gHandle(m,from){
-  if(!m||typeof m!=="object")return;
-  if(m.t==="chat"){m={t:"chat",n:String(m.n||"").slice(0,12),m:String(m.m||"").slice(0,100)};if(isGHost)gBroadcast(m);chatLine("<b>"+esc(m.n)+"</b> "+esc(m.m))}
-  else if(m.t==="gs"){m={t:"gs",n:String(m.n||"").slice(0,12),v:Math.max(0,+m.v||0)};if(!m.n)return;gscores[m.n]=m.v;sv(LS.g,gscores);if(isGHost)gBroadcast(m,from)}
-  else if(m.t==="gsall"&&m.s&&typeof m.s==="object"){for(const k in m.s)gscores[String(k).slice(0,12)]=Math.max(gscores[k]||0,+m.s[k]||0);sv(LS.g,gscores)}
-  else if(m.t==="on")$("onlineCount").textContent="접속 "+(+m.n||1)+"명";
-}
-function gSend(m){if(isGHost)gHandle(m,null);else if(gConns[0]&&gConns[0].open)gConns[0].send(m)}
-function sendGlobalScoreSync(n,v){gscores[n]=v;sv(LS.g,gscores);gSend({t:"gs",n,v})}
-function gSyncSelf(){if(user&&!user.guest){const v=ld(LS.s,"{}")[user.nick];if(v)sendGlobalScoreSync(user.nick,v)}}
-function startG(){
-  try{gpeer&&gpeer.destroy()}catch(e){}
-  gConns=[];isGHost=false;
-  const hub=gpeer=new Peer(GID);
-  hub.on("open",()=>{isGHost=true;sysLine("채팅 서버 준비 완료");gOnline();gSyncSelf()});
-  hub.on("connection",c=>{
-    c.on("open",()=>{gConns.push(c);c.send({t:"gsall",s:gscores});gOnline()});
-    c.on("data",m=>gHandle(m,c));
-    c.on("close",()=>{gConns=gConns.filter(x=>x!==c);gOnline()});
-  });
-  hub.on("error",e=>{
-    if(e.type==="unavailable-id"){
-      try{hub.destroy()}catch(_){}
-      const cl=gpeer=new Peer();
-      cl.on("open",()=>{
-        const c=cl.connect(GID,{reliable:true});gConns=[c];
-        c.on("open",()=>{sysLine("글로벌 채팅 연결됨");gSyncSelf()});
-        c.on("data",m=>gHandle(m,c));
-        c.on("close",()=>{gConns=[];$("onlineCount").textContent="재연결 중...";setTimeout(startG,2000+Math.random()*3000)});
-      });
-      cl.on("error",e2=>{if(e2.type==="peer-unavailable")setTimeout(startG,1500+Math.random()*2500)});
-    }else{sysLine("채팅 연결 실패: "+e.type);setTimeout(startG,8000)}
-  });
-}
-function initGlobalChat(){if(gStarted)return;gStarted=true;sysLine("글로벌 서버에 연결 중...");startG()}
-function sendChat(){const i=$("globalChatIn"),x=i.value.trim();if(!x)return;i.value="";if(!isGHost&&!(gConns[0]&&gConns[0].open)){sysLine("아직 연결 중이에요");return}gSend({t:"chat",n:user?user.nick:"게스트",m:x})}
-$("globalChatSend").onclick=sendChat;
-$("globalChatIn").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
-function showLB(){
-  const m=Object.assign({},gscores),l=ld(LS.s,"{}");for(const k in l)m[k]=Math.max(m[k]||0,l[k]);
-  const a=Object.entries(m).sort((x,y)=>y[1]-x[1]).slice(0,50);
-  $("lbList").innerHTML=a.length?a.map(([n,v],i)=>`<div class="lbi"><i>${i+1}</i><span style="flex:1">${esc(n)}</span><em>${v}승</em></div>`).join(""):'<div class="sub">아직 기록이 없어요</div>';
-  show("lboard");
-}
-$("btnLB").onclick=showLB;
-$("btnCloseLB").onclick=()=>show(user?"lobby":"auth");
-
-/* 입력 / 루프 및 DOM 이벤트 바인딩 */
-function startAI(d){isAI=true;D=DIFF[d];myId=0;begin(+$("modeSel").value,+$("mapSel").value)}
-
-window.addEventListener("DOMContentLoaded", () => {
-  $("bEasy").onclick=()=>startAI("easy");
-  $("bNorm").onclick=()=>startAI("normal");
-  $("bHard").onclick=()=>startAI("hard");
-  $("btnCreate").onclick=createRoom;
-  $("btnJoin").onclick=joinRoom;
-  $("startBtn").onclick=hostStart;
-  $("btnRe").onclick=rematch;
-  $("btnLobby").onclick=toLobby;
-
-  $("btnSignup").onclick = () => {
-    const n=$("aNick").value.trim(),p=$("aPw").value,m=$("aMsg"),u=ld(LS.u,"{}");
-    if(n.length<2||n.length>12){m.textContent="닉네임 2~12자";return}
-    if(p.length<2){m.textContent="비밀번호 2자 이상";return}
-    if(u[n]){m.textContent="이미 있는 닉네임";return}
-    u[n]=hash(p);sv(LS.u,u);const s=ld(LS.s,"{}");s[n]=s[n]||0;sv(LS.s,s);loginAs(n);
-  };
-
-  $("btnLogin").onclick = () => {
-    const n=$("aNick").value.trim(),u=ld(LS.u,"{}");
-    if(!u[n]||u[n]!==hash($("aPw").value)){$("aMsg").textContent="닉네임/비밀번호 틀림";return}
-    loginAs(n);
-  };
-
-  $("btnGuest").onclick = () => {
-    user={nick:"게스트_"+Math.floor(1000+Math.random()*9000),guest:true};
-    try{localStorage.removeItem(LS.c)}catch(e){}
-    show("lobby");ubar();initGlobalChat();
-  };
-
-  $("logoutBtn").onclick = () => {
-    user=null;try{localStorage.removeItem(LS.c)}catch(e){}
-    show("auth");ubar();
-  };
-
-  $("btnEditNick").onclick=()=>{
-    if(!user||user.guest) return;
-    const newNick = prompt("새로운 닉네임을 입력하세요 (2~12자):", user.nick);
-    if(!newNick) return;
-    const trimmed = newNick.trim();
-    if(trimmed.length < 2 || trimmed.length > 12){
-      alert("닉네임은 2~12자여야 합니다.");
-      return;
-    }
-    const users = ld(LS.u, "{}");
-    if(users[trimmed] && trimmed !== user.nick){
-      alert("이미 존재하는 닉네임입니다.");
-      return;
-    }
-    const oldNick = user.nick;
-    const passHash = users[oldNick];
-    delete users[oldNick];
-    users[trimmed] = passHash;
-    sv(LS.u, users);
-
-    const scores = ld(LS.s, "{}");
-    scores[trimmed] = scores[oldNick] || 0;
-    delete scores[oldNick];
-    sv(LS.s, scores);
-
-    user.nick = trimmed;
-    sv(LS.c, user);
-    ubar();
-    alert("닉네임이 변경되었습니다!");
-    
-    if(isGHost||(gConns[0]&&gConns[0].open)){
-      sendGlobalScoreSync(trimmed, scores[trimmed]);
-    }
-  };
-
-  const c = ld(LS.c, "null");
-  if(c && c.nick){
-    user = c;
-    show("lobby");
-    initGlobalChat();
-  } else {
-    show("auth");
-  }
-  ubar();
-});
-
-[["bF",x=>tF=x],["bD",x=>tD=x],["bU",x=>tU=x]].forEach(([id,f])=>{const el=$(id),h=x=>e=>{f(x);e.preventDefault();e.stopPropagation()};el.addEventListener("touchstart",h(true),{passive:false});el.addEventListener("touchend",h(false),{passive:false});el.addEventListener("touchcancel",h(false),{passive:false})});
-$("bW").addEventListener("touchstart",e=>{cycleWeapon();e.preventDefault();e.stopPropagation()},{passive:false});
-
-addEventListener("keydown",e=>{
-  if(e.target&&/INPUT|SELECT/.test(e.target.tagName))return;
-  const k=e.key.toLowerCase();
-  if(!keys[k]){
-    if(k==="r")cycleWeapon();
-    else if(k>="1"&&k<="5")cycleWeapon(+k-1);
-  }
-  keys[k]=true;if(e.key===" "||e.key.startsWith("Arrow"))e.preventDefault();});
-addEventListener("keyup",e=>{keys[e.key.toLowerCase()]=false});
-addEventListener("blur",()=>{keys={}});
-
-let last=performance.now();
-function loop(n){const dt=Math.min(.05,(n-last)/1000);last=n;update(dt);render();requestAnimationFrame(loop)}
-requestAnimationFrame(loop);
+window.GL_OK=true;
 </script>
 </body>
 </html>
