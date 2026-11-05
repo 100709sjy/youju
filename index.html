@@ -156,31 +156,50 @@ function ubar(){
   $("btnEditNick").style.display=user&&!user.guest?"inline-block":"none";
 }
 
-function loginAs(n){user={nick:n,guest:false};sv(LS.c,user);$("aMsg").textContent="";show("lobby");ubar();initGlobalChat()}
+function loginAs(n){
+  user={nick:n,guest:false};
+  sv(LS.c,user);
+  $("aMsg").textContent="";
+  show("lobby");
+  ubar();
+  initGlobalChat();
+}
 
-$("btnSignup").addEventListener("click", () => {
-  const n=$("aNick").value.trim(),p=$("aPw").value,m=$("aMsg"),u=ld(LS.u,"{}");
-  if(n.length<2||n.length>12){m.textContent="닉네임 2~12자";return}
-  if(p.length<2){m.textContent="비밀번호 2자 이상";return}
-  if(u[n]){m.textContent="이미 있는 닉네임";return}
-  u[n]=hash(p);sv(LS.u,u);const s=ld(LS.s,"{}");s[n]=s[n]||0;sv(LS.s,s);loginAs(n);
-});
+window.addEventListener("DOMContentLoaded", () => {
+  $("btnSignup").onclick = () => {
+    const n=$("aNick").value.trim(),p=$("aPw").value,m=$("aMsg"),u=ld(LS.u,"{}");
+    if(n.length<2||n.length>12){m.textContent="닉네임 2~12자";return}
+    if(p.length<2){m.textContent="비밀번호 2자 이상";return}
+    if(u[n]){m.textContent="이미 있는 닉네임";return}
+    u[n]=hash(p);sv(LS.u,u);const s=ld(LS.s,"{}");s[n]=s[n]||0;sv(LS.s,s);loginAs(n);
+  };
 
-$("btnLogin").addEventListener("click", () => {
-  const n=$("aNick").value.trim(),u=ld(LS.u,"{}");
-  if(!u[n]||u[n]!==hash($("aPw").value)){$("aMsg").textContent="닉네임/비밀번호 틀림";return}
-  loginAs(n);
-});
+  $("btnLogin").onclick = () => {
+    const n=$("aNick").value.trim(),u=ld(LS.u,"{}");
+    if(!u[n]||u[n]!==hash($("aPw").value)){$("aMsg").textContent="닉네임/비밀번호 틀림";return}
+    loginAs(n);
+  };
 
-$("btnGuest").addEventListener("click", () => {
-  user={nick:"게스트_"+Math.floor(1000+Math.random()*9000),guest:true};
-  try{localStorage.removeItem(LS.c)}catch(e){}
-  show("lobby");ubar();initGlobalChat();
-});
+  $("btnGuest").onclick = () => {
+    user={nick:"게스트_"+Math.floor(1000+Math.random()*9000),guest:true};
+    try{localStorage.removeItem(LS.c)}catch(e){}
+    show("lobby");ubar();initGlobalChat();
+  };
 
-$("logoutBtn").addEventListener("click", () => {
-  user=null;try{localStorage.removeItem(LS.c)}catch(e){}
-  show("auth");ubar();
+  $("logoutBtn").onclick = () => {
+    user=null;try{localStorage.removeItem(LS.c)}catch(e){}
+    show("auth");ubar();
+  };
+
+  const c = ld(LS.c, "null");
+  if(c && c.nick){
+    user = c;
+    show("lobby");
+    initGlobalChat();
+  } else {
+    show("auth");
+  }
+  ubar();
 });
 
 /* 닉네임 변경 기능 */
@@ -379,18 +398,6 @@ function sendGlobalChat(){
 
 $("globalChatSend").onclick = sendGlobalChat;
 $("globalChatIn").addEventListener("keydown", e => { if(e.key === "Enter") { sendGlobalChat(); e.preventDefault(); } });
-
-{
-  const c = ld(LS.c, "null");
-  if(c){
-    user = c;
-    show("lobby");
-    initGlobalChat();
-  } else {
-    show("auth");
-  }
-  ubar();
-}
 
 /* ---------- 맵 정보 ---------- */
 const BASE_MAPS=[
