@@ -43,6 +43,12 @@ select,input{padding:10px;border:2px solid #2a2a5a;background:#12122a;width:100%
 #bD{right:max(18px,env(safe-area-inset-right));bottom:max(116px,calc(env(safe-area-inset-bottom) + 108px));width:54px;height:54px;background:#ffd40059;border:2px solid #ffd400;color:#ffd400;font-size:12px}
 #bU{right:max(104px,calc(env(safe-area-inset-right) + 94px));bottom:max(40px,calc(env(safe-area-inset-bottom) + 30px));width:58px;height:58px;background:#ff2d6f66;border:2px solid #ff2d6f;font-size:12px}
 #bW{right:max(104px,calc(env(safe-area-inset-right) + 94px));bottom:max(110px,calc(env(safe-area-inset-bottom) + 100px));width:54px;height:54px;background:#00e5ff40;border:2px solid #00e5ff;font-size:12px}
+#chat{width:min(320px,94%);margin-top:8px;text-align:left}
+#chatLog{height:110px;overflow-y:auto;background:#0e0e22cc;border-radius:10px;padding:8px;font-size:13px;line-height:1.5;word-break:break-all}
+#chatLog b{color:var(--c1)}#chatLog i{color:var(--mu);font-style:normal}
+.crow{display:flex;gap:6px;margin-top:6px}
+#chatIn{flex:1;min-height:40px;text-align:left;width:auto}
+#chatSend{flex:none;min-height:40px;min-width:60px;padding:6px 12px}
 </style>
 </head>
 <body>
@@ -77,6 +83,7 @@ select,input{padding:10px;border:2px solid #2a2a5a;background:#12122a;width:100%
   <div class="row"><input id="roomInput" maxlength="5" placeholder="방 코드" style="flex:1"><button type="button" id="btnJoin" style="flex:none">입장</button></div>
   <div class="row"><button type="button" id="startBtn" class="g hide">게임 시작</button></div>
   <div id="status"></div>
+  <div id="chat" class="hide"><div id="chatLog"></div><div class="crow"><input id="chatIn" maxlength="80" placeholder="채팅 입력 (Enter)" autocomplete="off"><button type="button" id="chatSend">전송</button></div></div>
   <div class="keys"><b>PC</b> WASD 이동 · ←→ 회전 · Space/J 발사 · Shift/L 대시 · E 메테오 · R/1·2·3 무기<br><b>모바일</b> 조이스틱 · 화면 쓸어 회전 · 버튼</div>
 </div>
 
@@ -145,9 +152,26 @@ function beep(f,d,ty,v){try{AC=AC||new(window.AudioContext||window.webkitAudioCo
 /* ---------- 네트워크 (방장 = 허브) ---------- */
 const say=s=>$("status").textContent=s;
 const openN=()=>conns.filter(c=>c.open).length;
-function lobbyMsg(){say("방 코드: "+roomCode+" · 접속 "+(openN()+1)+"/"+MAXP+"명");$("startBtn").classList.toggle("hide",openN()<1)}
+function lobbyMsg(){$("chat").classList.remove("hide");say("방 코드: "+roomCode+" · 접속 "+(openN()+1)+"/"+MAXP+"명");$("startBtn").classList.toggle("hide",openN()<1)}
 function toLobby(){conns.forEach(c=>{try{c.close()}catch(e){}});if(conn)try{conn.close()}catch(e){}if(peer)try{peer.destroy()}catch(e){}
-  conn=null;peer=null;conns=[];nextId=1;isHost=false;state="lobby";me=null;$("wrap").classList.remove("playing");$("touchUI").classList.remove("show");detachTouch();show("lobby");$("startBtn").classList.add("hide");say("")}
+  conn=null;peer=null;conns=[];nextId=1;isHost=false;state="lobby";me=null;$("wrap").classList.remove("playing");$("touchUI").classList.remove("show");detachTouch();show("lobby");$("startBtn").classList.add("hide");say("");$("chat").classList.add("hide");$("chatLog").textContent=""}
+/* ---------- 로비 채팅 ---------- */
+let lastChat=0;
+function chatAdd(n,x){
+  const d=document.createElement("div");
+  if(n){const b=document.createElement("b");b.textContent=String(n).slice(0,12)+" ";d.appendChild(b);d.appendChild(document.createTextNode(String(x).slice(0,80)))}
+  else{const i=document.createElement("i");i.textContent="· "+String(x).slice(0,80);d.appendChild(i)}
+  const l=$("chatLog");l.appendChild(d);while(l.children.length>60)l.removeChild(l.firstChild);l.scrollTop=l.scrollHeight;
+}
+function sysAll(x){chatAdd("",x);send({t:"c",n:"",x})}
+function chatSend(){
+  const x=$("chatIn").value.trim().slice(0,80),now=Date.now();
+  if(!x||now-lastChat<400)return;lastChat=now;
+  const n=user&&!user.guest?user.nick:(isHost?"방장":"게스트"+myId);
+  chatAdd(n,x);send({t:"c",n,x});$("chatIn").value="";
+}
+$("chatSend").onclick=chatSend;
+$("chatIn").addEventListener("keydown",e=>{if(e.key==="Enter"){chatSend();e.preventDefault()}});
 function createRoom(){
   if(typeof Peer==="undefined"){say("PeerJS 로드 실패");return}
   roomCode=Math.random().toString(36).slice(2,7).toUpperCase();
@@ -157,7 +181,7 @@ function createRoom(){
   peer.on("connection",c=>{
     if(conns.length>=MAXP-1||state!=="lobby"){c.on("open",()=>c.close());return}
     c.pid=nextId++;conns.push(c);
-    c.on("open",()=>{c.send({t:"id",i:c.pid});lobbyMsg()});
+    c.on("open",()=>{c.send({t:"id",i:c.pid});lobbyMsg();sysAll("새 플레이어 입장 ("+(openN()+1)+"/"+MAXP+"명)")});
     c.on("data",m=>{onData(m);conns.forEach(o=>{if(o!==c&&o.open)o.send(m)})});
     c.on("close",()=>onLeave(c));
   });
@@ -169,14 +193,14 @@ function joinRoom(){
   if(typeof Peer==="undefined"){say("PeerJS 로드 실패");return}
   peer=new Peer();isHost=false;isAI=false;say("접속 중...");
   peer.on("open",()=>{conn=peer.connect("hyeonuk-"+code);
-    conn.on("open",()=>say("접속 완료! 방장이 시작하길 기다리는 중"));
+    conn.on("open",()=>{say("접속 완료! 방장이 시작하길 기다리는 중");$("chat").classList.remove("hide");chatAdd("","방에 입장했습니다")});
     conn.on("data",onData);
     conn.on("close",()=>{if(state==="lobby")say("방장이 나갔습니다");else if(state!=="over"){state="over";showEnd("연결이 끊겼습니다",false)}})});
   peer.on("error",e=>say("오류: "+e.type));
 }
 const hostIds=()=>[0,...conns.filter(c=>c.open).map(c=>c.pid)];
 function hostStart(){const ids=hostIds();if(ids.length<2)return;const mi=+$("mapSel").value;send({t:"go",ids,m:mi});begin(ids,mi)}
-function onLeave(c){conns=conns.filter(o=>o!==c);if(state==="lobby"){lobbyMsg();return}const p=byId(c.pid);if(p&&p.alive){p.alive=false;send({t:"k",i:c.pid});checkEnd()}}
+function onLeave(c){conns=conns.filter(o=>o!==c);if(state==="lobby"){lobbyMsg();sysAll("플레이어가 나갔습니다");return}const p=byId(c.pid);if(p&&p.alive){p.alive=false;send({t:"k",i:c.pid});checkEnd()}}
 function send(o){if(o.i===undefined)o.i=myId;if(isHost)conns.forEach(c=>{if(c.open)c.send(o)});else if(conn&&conn.open)conn.send(o)}
 function onData(m){
   if(m.t==="id")myId=m.i;
@@ -185,6 +209,7 @@ function onData(m){
   else if(m.t==="b"){bullets.push({x:m.x,y:m.y,vx:m.vx,vy:m.vy,o:m.i,life:m.l||1.3,bn:0,d:m.d||DMG});beep(300,.08,"sawtooth",.03)}
   else if(m.t==="k"){const p=byId(m.i);if(p&&p.alive){p.alive=false;boom(p.x,p.y,p.col);checkEnd()}}
   else if(m.t==="pk"){if(pickups[m.n])pickups[m.n].cd=PCD[pickups[m.n].k]}
+  else if(m.t==="c")chatAdd(m.n,m.x)
 }
 
 /* ---------- 게임 세팅 ---------- */
