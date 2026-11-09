@@ -301,6 +301,7 @@ function loginAs(n){
 
 /* ---------- 글로벌 채팅 / 랭킹 (PeerJS 허브) ---------- */
 const GID="hyeonuk-global-hub-v2";
+const PCFG={config:{iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:global.stun.twilio.com:3478"},{urls:["turn:openrelay.metered.ca:80","turn:openrelay.metered.ca:443","turns:openrelay.metered.ca:443?transport=tcp"],username:"openrelayproject",credential:"openrelayproject"}]}};
 let gpeer=null,gConns=[],isGHost=false,gStarted=false,gscores=ld(LS.g,"{}");
 function chatLine(h){const l=$("globalChatLog"),d=document.createElement("div");d.innerHTML=h;l.appendChild(d);while(l.children.length>60)l.removeChild(l.firstChild);l.scrollTop=l.scrollHeight}
 const sysLine=t=>chatLine('<span class="sys">'+esc(t)+'</span>');
@@ -328,7 +329,8 @@ function gSyncSelf(){if(user&&!user.guest){const v=ld(LS.s,"{}")[user.nick];if(v
 function startG(){
   try{gpeer&&gpeer.destroy()}catch(e){}
   gConns=[];isGHost=false;
-  const hub=gpeer=new Peer(GID);
+  const hub=gpeer=new Peer(GID,PCFG);
+  hub.on("disconnected",()=>{try{hub.reconnect()}catch(e){}});
   hub.on("open",()=>{isGHost=true;sysLine("채팅 서버 준비 완료");gOnline();gSyncSelf()});
   hub.on("connection",c=>{
     c.on("open",()=>{gConns.push(c);c.send({t:"gsall",s:gscores});gOnline()});
@@ -338,7 +340,7 @@ function startG(){
   hub.on("error",e=>{
     if(e.type==="unavailable-id"){
       try{hub.destroy()}catch(_){}
-      const cl=gpeer=new Peer();
+      const cl=gpeer=new Peer(undefined,PCFG);
       cl.on("open",()=>{
         const c=cl.connect(GID,{reliable:true});gConns=[c];
         c.on("open",()=>{sysLine("글로벌 채팅 연결됨");gSyncSelf()});
@@ -392,8 +394,9 @@ function createRoom(tries){
   if(typeof Peer==="undefined"){setStatus("네트워크 라이브러리를 불러오지 못했어요");return}
   closeNet();isAI=false;isHost=true;myId=0;nextId=1;
   roomCode=String(Math.floor(10000+Math.random()*90000));setStatus("방 만드는 중...");
-  const pr=peer=new Peer(PRE+roomCode);
-  pr.on("open",updLobby);
+  const pr=peer=new Peer(PRE+roomCode,PCFG);
+  pr.on("open",updLobby);pr.on("disconnected",()=>{try{pr.reconnect()}catch(e){}});
+  setTimeout(()=>{if(peer===pr&&!pr.open)setStatus("서버에 연결하지 못했어요. 잠시 후 다시 시도하거나 새로고침 해보세요")},10000);
   pr.on("connection",c=>{
     if(state!=="lobby"||hostIds().length>=8){c.on("open",()=>{c.send({t:"full"});setTimeout(()=>c.close(),300)});return}
     c.pid=nextId++;
@@ -407,7 +410,8 @@ function joinRoom(){
   if(typeof Peer==="undefined"){setStatus("네트워크 라이브러리를 불러오지 못했어요");return}
   const code=$("roomInput").value.trim();if(!code){setStatus("방 코드를 입력하세요");return}
   closeNet();isAI=false;isHost=false;myId=-1;setStatus("접속 중...");
-  const pr=peer=new Peer();
+  const pr=peer=new Peer(undefined,PCFG);
+  setTimeout(()=>{if(peer===pr&&!(conn&&conn.open))setStatus("서버에 연결하지 못했어요. 방 코드를 확인하거나 잠시 후 다시 시도해 보세요")},12000);
   pr.on("open",()=>{
     const c=conn=pr.connect(PRE+code,{reliable:true});
     c.on("open",()=>setStatus("접속 완료! 방장이 시작하기를 기다리는 중..."));
@@ -1163,6 +1167,6 @@ function loop(n){const dt=Math.min(.033,(n-last)/1000);last=n;update(dt);render(
 requestAnimationFrame(loop);
 
 </script>
-<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>(function(){const u=["https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js","https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js","https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"];let i=0;function n(){if(window.Peer||i>=u.length)return;const e=document.createElement("script");e.src=u[i++];e.onerror=n;document.head.appendChild(e)}n()})()</script>
 </body>
 </html>
