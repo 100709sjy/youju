@@ -669,7 +669,7 @@ function slamBurst(p){
   for(const v of P)if(v!==p&&v.alive&&Math.abs(v.x-p.x)<130&&Math.abs(v.y-p.y)<80)hit(v,p,14*p.c.dm,380,-420,v.x<p.x?-1:1,false);
 }
 function phys(p,dt,i){if(p.uz||p.chm>0)i={};
-  const c=p.c;p.cd-=dt;p.pcd-=dt;if(p.mute>0)p.mute-=dt;if(p.sd>0)p.sd-=dt;else p.sta=Math.min(100,(p.sta==null?100:p.sta)+12*dt);if(p.st>0)p.st-=dt;if(p.slow>0)p.slow-=dt;if(p.gb>0)p.gb-=dt;if(p.lnd>0)p.lnd-=dt;
+  const c=p.c;p.cd-=dt;p.pcd-=dt;if(p.mute>0)p.mute-=dt;if(p.sd>0)p.sd-=dt;else p.sta=Math.min(100,(p.sta==null?100:p.sta)+16*dt);if(p.st>0)p.st-=dt;if(p.slow>0)p.slow-=dt;if(p.gb>0)p.gb-=dt;if(p.lnd>0)p.lnd-=dt;
   if(p.cwin>0){p.cwin-=dt;if(p.cwin<=0)p.cmb=0}
   if(p.psn>0){p.psn-=dt;if(state==="play"){p.ptk=(p.ptk||0)+dt;if(p.ptk>=.5){p.ptk=0;p.hp-=2;FX.push({x:p.x,y:p.y-100,vx:0,vy:-40,l:.5,t:"-2",c:"#c77dff"})}}}
   const free=p.st<=0;
